@@ -1,0 +1,32 @@
+<Solution>
+  <Folder Name="/ApiGateway/">
+    <Project Path="ApiGateway/AXDD.ApiGateway/AXDD.ApiGateway.csproj" />
+  </Folder>
+  <Folder Name="/BuildingBlocks/">
+    <Project Path="BuildingBlocks/AXDD.BuildingBlocks.Common/AXDD.BuildingBlocks.Common.csproj" />
+    <Project Path="BuildingBlocks/AXDD.BuildingBlocks.Domain/AXDD.BuildingBlocks.Domain.csproj" />
+    <Project Path="BuildingBlocks/AXDD.BuildingBlocks.Infrastructure/AXDD.BuildingBlocks.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/" />
+  <Folder Name="/Services/Auth/">
+    <Project Path="Services/Auth/AXDD.Services.Auth.Api/AXDD.Services.Auth.Api.csproj" />
+  </Folder>
+  <Folder Name="/Services/Enterprise/">
+    <Project Path="Services/Enterprise/AXDD.Services.Enterprise.Api/AXDD.Services.Enterprise.Api.csproj" />
+  </Folder>
+  <Folder Name="/Services/FileManager/">
+    <Project Path="Services/FileManager/AXDD.Services.FileManager.Api/AXDD.Services.FileManager.Api.csproj" />
+  </Folder>
+  <Folder Name="/Services/Investment/">
+    <Project Path="Services/Investment/AXDD.Services.Investment.Api/AXDD.Services.Investment.Api.csproj" />
+  </Folder>
+  <Folder Name="/Services/MasterData/">
+    <Project Path="Services/MasterData/AXDD.Services.MasterData.Api/AXDD.Services.MasterData.Api.csproj" />
+  </Folder>
+  <Folder Name="/Services/Report/">
+    <Project Path="Services/Report/AXDD.Services.Report.Api/AXDD.Services.Report.Api.csproj" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/AXDD.Tests.Unit/AXDD.Tests.Unit.csproj" />
+  </Folder>
+</Solution>

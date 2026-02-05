@@ -1,0 +1,6 @@
+@AXDD.Services.Enterprise.Api_HostAddress = http://localhost:5163
+
+GET {{AXDD.Services.Enterprise.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
