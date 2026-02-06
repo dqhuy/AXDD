@@ -173,16 +173,20 @@ C4Container
     
     Container(auth_service, "Auth Service", ".NET Core 9", "Xác thực và phân quyền")
     Container(file_service, "File Service", ".NET Core 9", "Quản lý tệp tin")
+    Container(log_service, "Log Service", ".NET Core 9", "Ghi nhật ký hệ thống")
+    Container(notification_service, "Notification Service", ".NET Core 9", "Gửi thông báo")
     Container(ocr_service, "OCR Service", ".NET Core 9", "Nhận dạng ký tự quang học")
     Container(search_service, "Search Service", ".NET Core 9", "Tìm kiếm toàn văn")
     Container(lgsp_service, "LGSP Service", ".NET Core 9", "Tích hợp với LGSP")
     
     Container(investment_service, "Investment Service", ".NET Core 9", "Quản lý đầu tư")
     Container(enterprise_service, "Enterprise Service", ".NET Core 9", "Quản lý doanh nghiệp")
-    Container(report_service, "Report Service", ".NET Core 9", "Báo cáo thống kê")
+    Container(enterprise_report_mgmt_service, "EnterpriseReportManagement Service", ".NET Core 9", "Quản lý báo cáo DN")
+    Container(report_service, "Report Service", ".NET Core 9", "Tổng hợp dữ liệu & Dashboard")
     Container(gis_service, "GIS Service", ".NET Core 9", "Quản lý bản đồ GIS")
     
     ContainerDb(sql_server, "SQL Server", "RDBMS", "Dữ liệu nghiệp vụ chính")
+    ContainerDb(rabbitmq, "RabbitMQ", "Message Queue", "Hàng đợi tin nhắn bất đồng bộ")
     ContainerDb(postgres_gis, "PostgreSQL + PostGIS", "GIS Database", "Dữ liệu không gian địa lý")
     ContainerDb(minio, "MinIO", "Object Storage", "Lưu trữ tệp tin")
     ContainerDb(redis, "Redis", "Cache", "Bộ nhớ đệm")
@@ -200,15 +204,26 @@ C4Container
     
     Rel(api_gateway, auth_service, "Routes to")
     Rel(api_gateway, investment_service, "Routes to")
-    Rel(api_gateway, enterprise_service, "Routes to") 
+    Rel(api_gateway, enterprise_service, "Routes to")
+    Rel(api_gateway, enterprise_report_mgmt_service, "Routes to")
     Rel(api_gateway, report_service, "Routes to")
     
     Rel(auth_service, sql_server, "Reads/Writes")
     Rel(investment_service, sql_server, "Reads/Writes")
     Rel(enterprise_service, sql_server, "Reads/Writes")
+    Rel(enterprise_report_mgmt_service, sql_server, "Reads/Writes")
     Rel(report_service, sql_server, "Reads/Writes")
     Rel(gis_service, postgres_gis, "Reads/Writes")
     Rel(file_service, minio, "Stores files")
+    
+    Rel(investment_service, rabbitmq, "Publish messages", "Log, Search")
+    Rel(enterprise_service, rabbitmq, "Publish messages", "Log, Search")
+    Rel(enterprise_report_mgmt_service, rabbitmq, "Publish messages", "Log, Notify")
+    
+    Rel(log_service, rabbitmq, "Subscribe", "Log messages")
+    Rel(notification_service, rabbitmq, "Subscribe", "Notification messages")
+    Rel(search_service, rabbitmq, "Subscribe", "Index messages")
+    Rel(ocr_service, rabbitmq, "Subscribe", "OCR messages")
     
     Rel(auth_service, vneid_ext, "SSO", "OAuth2/OIDC")
     Rel(lgsp_service, lgsp_ext, "Data Sync", "HTTPS/SOAP")
@@ -229,9 +244,10 @@ Các dịch vụ nền tảng cung cấp chức năng chung cho toàn hệ thố
 | **Auth Service** | Xác thực & Phân quyền | • SSO với VNeid<br/>• Quản lý người dùng<br/>• Phân quyền RBAC<br/>• JWT Token |
 | **Master Data Service** | Danh mục dùng chung | • Danh mục hành chính<br/>• Khu công nghiệp<br/>• Ngành nghề kinh tế<br/>• Đồng bộ từ LGSP |
 | **File Service** | Quản lý tệp tin | • Upload/Download<br/>• Phân quyền truy cập<br/>• Tích hợp MinIO<br/>• Share files |
-| **Notification Service** | Gửi thông báo | • Email notification<br/>• In-app notification<br/>• Push notification<br/>• Templates |
-| **OCR Service** | Nhận dạng ký tự quang học | • Xử lý 20 mẫu nhận dạng<br/>• Bóc tách dữ liệu<br/>• Queue management<br/>• 250,000 trang/năm |
-| **Search Service** | Tìm kiếm toàn văn | • Full-text search<br/>• Elasticsearch backend<br/>• Indexing<br/>• Analytics |
+| **Log Service** | Ghi nhật ký hệ thống | • Nhận log qua RabbitMQ<br/>• Ghi audit CRUD, login, logout<br/>• Tra cứu lịch sử hoạt động<br/>• Lưu trữ tập trung |
+| **Notification Service** | Gửi thông báo | • Nhận request qua RabbitMQ<br/>• Email notification<br/>• In-app notification<br/>• Push notification |
+| **OCR Service** | Nhận dạng ký tự quang học | • Nhận request qua RabbitMQ<br/>• Xử lý 20 mẫu nhận dạng<br/>• Bóc tách dữ liệu<br/>• 250,000 trang/năm |
+| **Search Service** | Tìm kiếm toàn văn | • Nhận index request qua RabbitMQ<br/>• Full-text search<br/>• Elasticsearch backend<br/>• Analytics |
 | **LGSP Service** | Tích hợp hệ thống Tỉnh | • Đồng bộ Một cửa<br/>• Đồng bộ QLVB<br/>• Data exchange<br/>• API Gateway |
 
 ### 4.2. Business Services (Domain Services)
@@ -245,8 +261,9 @@ Các dịch vụ nghiệp vụ theo từng lĩnh vực quản lý:
 | **Construction Service** | Quản lý Xây dựng | • Giấy phép xây dựng<br/>• Quản lý quy hoạch<br/>• Thẩm định báo cáo NCKT |
 | **Labor Service** | Quản lý Lao động | • Nội quy lao động<br/>• Thỏa ước lao động<br/>• Báo cáo sử dụng lao động |
 | **Enterprise Service** | Quản lý Doanh nghiệp | • Thông tin doanh nghiệp<br/>• Thi đua khen thưởng<br/>• Trạng thái hoạt động |
+| **EnterpriseReportManagement Service** | Quản lý Báo cáo Doanh nghiệp | • Nộp báo cáo định kỳ của DN<br/>• Phê duyệt/Từ chối báo cáo<br/>• Quản lý quy trình duyệt báo cáo |
 | **Inspection Service** | Thanh tra Kiểm tra | • Quản lý thanh tra<br/>• Vi phạm và xử phạt<br/>• Theo dõi thực hiện |
-| **Report Service** | Báo cáo Thống kê | • Dashboard điều hành<br/>• Báo cáo định kỳ<br/>• Cảnh báo hệ thống |
+| **Report Service** | Báo cáo & Tổng hợp dữ liệu | • Background jobs tổng hợp dữ liệu<br/>• Cung cấp dữ liệu Dashboard<br/>• Kết xuất báo cáo định kỳ |
 | **GIS Service** | Bản đồ GIS | • Bản đồ khu công nghiệp<br/>• Vị trí doanh nghiệp<br/>• Spatial queries |
 
 ### 4.3. Kiến Trúc Microservices
@@ -261,6 +278,7 @@ graph TB
         AUTH[Auth Service]
         MASTER[Master Data Service]
         FILE[File Service]
+        LOG[Log Service]
         NOTIFY[Notification Service]
         OCR[OCR Service]
         SEARCH[Search Service]
@@ -273,6 +291,7 @@ graph TB
         CONST[Construction Service]
         LABOR[Labor Service]
         ENT[Enterprise Service]
+        ENT_RPT_MGMT[EnterpriseReportManagement Service]
         INSP[Inspection Service]
         RPT[Report Service]
         GIS[GIS Service]
@@ -290,6 +309,7 @@ graph TB
     GW --> AUTH
     GW --> MASTER
     GW --> FILE
+    GW --> LOG
     GW --> NOTIFY
     GW --> OCR
     GW --> SEARCH
@@ -300,6 +320,7 @@ graph TB
     GW --> CONST
     GW --> LABOR
     GW --> ENT
+    GW --> ENT_RPT_MGMT
     GW --> INSP
     GW --> RPT
     GW --> GIS
@@ -314,13 +335,111 @@ graph TB
     CONST --> SQL
     LABOR --> SQL
     ENT --> SQL
+    ENT_RPT_MGMT --> SQL
     INSP --> SQL
     RPT --> SQL
     
     GIS --> POSTGRES
     SEARCH --> ELASTIC
     AUTH --> REDIS
-    NOTIFY --> RABBIT
+    
+    %% Message Queue Communication
+    INV -.->|Publish Log/Search| RABBIT
+    ENV -.->|Publish Log/Search| RABBIT
+    ENT -.->|Publish Log/Search| RABBIT
+    ENT_RPT_MGMT -.->|Publish Log/Notify| RABBIT
+    
+    RABBIT -.->|Subscribe Log| LOG
+    RABBIT -.->|Subscribe Notify| NOTIFY
+    RABBIT -.->|Subscribe Index| SEARCH
+    RABBIT -.->|Subscribe OCR| OCR
+    
+    LOG --> SQL
+    NOTIFY --> SQL
+```
+
+### 4.4. Trao đổi Dữ liệu qua Message Queue
+
+Hệ thống sử dụng RabbitMQ để tách biệt các dịch vụ và xử lý bất đồng bộ:
+
+#### 4.4.1. Log Service (Ghi nhật ký)
+
+**Nguồn dữ liệu:** Các service nghiệp vụ (Investment, Enterprise, EnterpriseReportManagement, etc.)
+
+**Luồng xử lý:**
+1. Khi user thực hiện CRUD, login, logout → Service gửi message log đến RabbitMQ
+2. Log Service đọc message từ queue và lưu vào LogDB
+3. Đảm bảo tách biệt việc ghi log khỏi business logic, không ảnh hưởng hiệu năng
+
+**Message format:**
+```json
+{
+  "eventType": "CRUD|Login|Logout",
+  "userId": "string",
+  "action": "Create|Read|Update|Delete",
+  "entity": "Enterprise|Investment|Report",
+  "timestamp": "ISO8601",
+  "ipAddress": "string",
+  "details": {}
+}
+```
+
+#### 4.4.2. Notification Service (Thông báo)
+
+**Nguồn dữ liệu:** Các service nghiệp vụ cần gửi thông báo
+
+**Luồng xử lý:**
+1. Service nghiệp vụ publish message notification đến RabbitMQ
+2. Notification Service subscribe và xử lý gửi email/push/in-app notification
+3. Đảm bảo việc gửi thông báo không làm chậm business process
+
+**Message format:**
+```json
+{
+  "recipientIds": ["userId1", "userId2"],
+  "type": "Email|Push|InApp",
+  "template": "report_approval|report_rejection",
+  "data": {},
+  "priority": "High|Normal|Low"
+}
+```
+
+#### 4.4.3. Search Service (Tìm kiếm)
+
+**Nguồn dữ liệu:** Các service nghiệp vụ khi có thay đổi dữ liệu
+
+**Luồng xử lý:**
+1. Khi dữ liệu enterprise/investment thay đổi → Service gửi message index request
+2. Search Service đọc message và cập nhật Elasticsearch index
+3. Đảm bảo search index luôn đồng bộ mà không blocking transaction chính
+
+**Message format:**
+```json
+{
+  "operation": "Index|Update|Delete",
+  "entityType": "Enterprise|Investment|Document",
+  "entityId": "string",
+  "data": {}
+}
+```
+
+#### 4.4.4. OCR Service (Nhận dạng văn bản)
+
+**Nguồn dữ liệu:** FileManager Service và các service nghiệp vụ
+
+**Luồng xử lý:**
+1. User upload file → Service gửi OCR request qua RabbitMQ
+2. OCR Service xử lý file từ MinIO và trả kết quả
+3. Xử lý bất đồng bộ cho phép user tiếp tục làm việc trong khi OCR đang chạy
+
+**Message format:**
+```json
+{
+  "fileId": "string",
+  "documentType": "License|Certificate|Report",
+  "callbackUrl": "string",
+  "priority": "High|Normal"
+}
 ```
 
 ---
