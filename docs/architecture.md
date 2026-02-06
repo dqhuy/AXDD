@@ -70,13 +70,34 @@ Hệ thống AXDD (Quản lý CSDL KCN Đồng Nai) được thiết kế theo k
 
 ### 6. Report Service (Port: 5006)
 **Trách nhiệm:**
-- Tạo báo cáo thống kê
+- Background jobs tổng hợp dữ liệu định kỳ
+- Cung cấp dữ liệu cho Dashboard
 - Export báo cáo (PDF, Excel)
-- Dashboard data
+- Kết xuất báo cáo định kỳ
+
+**Lưu ý:** Service này KHÔNG đảm nhiệm việc nộp/phê duyệt báo cáo nghiệp vụ của doanh nghiệp.
 
 **Endpoints:**
 - `GET /api/report/summary` - Báo cáo tổng hợp
 - `GET /api/report/export` - Export báo cáo
+- `GET /api/report/dashboard` - Dữ liệu dashboard
+
+### 7. EnterpriseReportManagement Service (Port: 5007)
+**Trách nhiệm:**
+- Quản lý nộp báo cáo định kỳ của doanh nghiệp
+- Phê duyệt/Từ chối báo cáo của ban quản lý KCN
+- Gửi thông báo qua RabbitMQ khi có thay đổi trạng thái
+- Theo dõi quy trình duyệt báo cáo
+
+**Message Queue Integration:**
+- Publish notification messages qua RabbitMQ
+- Publish log events qua RabbitMQ
+
+**Endpoints:**
+- `GET /api/enterprise-reports` - Danh sách báo cáo
+- `POST /api/enterprise-reports` - Nộp báo cáo mới
+- `PUT /api/enterprise-reports/{id}/approve` - Phê duyệt báo cáo
+- `PUT /api/enterprise-reports/{id}/reject` - Từ chối báo cáo
 
 ## BuildingBlocks
 
@@ -110,8 +131,44 @@ Hệ thống AXDD (Quản lý CSDL KCN Đồng Nai) được thiết kế theo k
 - Authentication/Authorization (future)
 
 ### Service-to-Service
-- HTTP/REST APIs
-- Event-driven (future với message queue)
+- HTTP/REST APIs cho synchronous communication
+- Message Queue (RabbitMQ) cho asynchronous communication
+
+### Message Queue Architecture (RabbitMQ)
+
+**Services nhận message qua RabbitMQ:**
+
+1. **Log Service**
+   - Nhận log events từ tất cả business services
+   - Ghi nhật ký CRUD, Login, Logout
+   - Queue: `log.events`
+
+2. **Notification Service**
+   - Nhận notification requests
+   - Gửi Email, In-App, Push notifications
+   - Queue: `notification.requests`
+
+3. **Search Service**
+   - Nhận index/update/delete requests
+   - Cập nhật Elasticsearch index
+   - Queue: `search.index`
+
+4. **OCR Service**
+   - Nhận OCR processing requests
+   - Xử lý nhận dạng ký tự từ file
+   - Queue: `ocr.requests`
+
+**Services gửi message:**
+- Tất cả business services (Investment, Enterprise, EnterpriseReportManagement, etc.)
+- Gửi log events khi có CRUD operations
+- Gửi notification requests khi cần thông báo users
+- Gửi search index updates khi data thay đổi
+
+**Lợi ích:**
+- Tách biệt business logic khỏi logging/notification
+- Xử lý bất đồng bộ, không blocking main flow
+- Retry mechanism cho failed messages
+- Scalability: có thể scale consumer services độc lập
 
 ## Data Management
 
@@ -142,7 +199,9 @@ Hệ thống AXDD (Quản lý CSDL KCN Đồng Nai) được thiết kế theo k
 ### Logging
 - Structured logging with Microsoft.Extensions.Logging
 - Log levels: Information, Warning, Error
-- Centralized logging (future với ELK/Seq)
+- Centralized logging với Log Service (nhận log qua RabbitMQ)
+- Audit trail cho CRUD operations, Login/Logout
+- Future: ELK/Seq cho application logs
 
 ### Health Checks
 - Mỗi service có `/health` endpoint

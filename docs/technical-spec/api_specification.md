@@ -1099,6 +1099,189 @@ Authorization: Bearer {token}
 
 ---
 
+### 8.8. EnterpriseReportManagement API
+
+#### List Enterprise Reports
+
+```http
+GET /api/v1/enterprise-reports?page=1&pageSize=20&status=Pending
+Authorization: Bearer {token}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "enterpriseId": "uuid",
+        "enterpriseName": "Công ty ABC",
+        "reportType": "Labor",
+        "reportPeriod": "2024-Q1",
+        "submittedDate": "2024-03-15T10:30:00Z",
+        "status": "Pending",
+        "submittedBy": {
+          "id": "uuid",
+          "name": "Nguyễn Văn A"
+        }
+      }
+    ],
+    "totalCount": 150,
+    "page": 1,
+    "pageSize": 20
+  }
+}
+```
+
+#### Submit Enterprise Report
+
+```http
+POST /api/v1/enterprise-reports
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "reportType": "Labor",
+  "reportPeriod": "2024-Q1",
+  "data": {
+    "totalEmployees": 500,
+    "vietnameseEmployees": 450,
+    "foreignEmployees": 50
+  },
+  "attachments": [
+    {
+      "fileId": "uuid",
+      "fileName": "labor-report-q1.pdf"
+    }
+  ]
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "status": "Pending",
+    "submittedDate": "2024-03-15T10:30:00Z",
+    "message": "Báo cáo đã được nộp thành công và đang chờ phê duyệt"
+  }
+}
+```
+
+#### Approve Enterprise Report
+
+```http
+PUT /api/v1/enterprise-reports/{id}/approve
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "approverNotes": "Báo cáo đầy đủ và chính xác"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "status": "Approved",
+    "approvedDate": "2024-03-16T09:00:00Z",
+    "approvedBy": {
+      "id": "uuid",
+      "name": "Trần Thị B"
+    }
+  }
+}
+```
+
+#### Reject Enterprise Report
+
+```http
+PUT /api/v1/enterprise-reports/{id}/reject
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "rejectionReason": "Thiếu tài liệu đính kèm",
+  "requestedChanges": "Vui lòng bổ sung file scan giấy tờ gốc"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "status": "Rejected",
+    "rejectedDate": "2024-03-16T09:00:00Z",
+    "rejectedBy": {
+      "id": "uuid",
+      "name": "Trần Thị B"
+    },
+    "rejectionReason": "Thiếu tài liệu đính kèm"
+  }
+}
+```
+
+#### Get Report Detail
+
+```http
+GET /api/v1/enterprise-reports/{id}
+Authorization: Bearer {token}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "enterpriseId": "uuid",
+    "enterpriseName": "Công ty ABC",
+    "reportType": "Labor",
+    "reportPeriod": "2024-Q1",
+    "status": "Approved",
+    "data": {
+      "totalEmployees": 500,
+      "vietnameseEmployees": 450,
+      "foreignEmployees": 50
+    },
+    "attachments": [
+      {
+        "fileId": "uuid",
+        "fileName": "labor-report-q1.pdf",
+        "uploadedDate": "2024-03-15T10:25:00Z"
+      }
+    ],
+    "submittedBy": {
+      "id": "uuid",
+      "name": "Nguyễn Văn A"
+    },
+    "submittedDate": "2024-03-15T10:30:00Z",
+    "approvedBy": {
+      "id": "uuid",
+      "name": "Trần Thị B"
+    },
+    "approvedDate": "2024-03-16T09:00:00Z",
+    "approverNotes": "Báo cáo đầy đủ và chính xác"
+  }
+}
+```
+
+---
+
 ## 9. Webhooks
 
 ### 9.1. Webhook Events
@@ -1108,6 +1291,9 @@ Authorization: Bearer {token}
 | `enterprise.created` | New enterprise created |
 | `enterprise.updated` | Enterprise updated |
 | `enterprise.deleted` | Enterprise deleted |
+| `enterprise_report.submitted` | Enterprise report submitted |
+| `enterprise_report.approved` | Enterprise report approved |
+| `enterprise_report.rejected` | Enterprise report rejected |
 | `certificate.issued` | Certificate issued |
 | `certificate.expired` | Certificate expired |
 | `document.uploaded` | Document uploaded |
