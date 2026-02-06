@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy solution and project files
-COPY ["src/AXDD.sln", "./"]
+COPY ["src/AXDD.slnx", "./"]
 COPY ["src/BuildingBlocks/AXDD.BuildingBlocks.Common/AXDD.BuildingBlocks.Common.csproj", "BuildingBlocks/AXDD.BuildingBlocks.Common/"]
 COPY ["src/BuildingBlocks/AXDD.BuildingBlocks.Domain/AXDD.BuildingBlocks.Domain.csproj", "BuildingBlocks/AXDD.BuildingBlocks.Domain/"]
 COPY ["src/Services/Auth/AXDD.Services.Auth.Api/AXDD.Services.Auth.Api.csproj", "Services/Auth/AXDD.Services.Auth.Api/"]

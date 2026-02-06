@@ -2,7 +2,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-COPY ["src/AXDD.sln", "./"]
+COPY ["src/AXDD.slnx", "./"]
 COPY ["src/BuildingBlocks/AXDD.BuildingBlocks.Common/AXDD.BuildingBlocks.Common.csproj", "BuildingBlocks/AXDD.BuildingBlocks.Common/"]
 COPY ["src/BuildingBlocks/AXDD.BuildingBlocks.Domain/AXDD.BuildingBlocks.Domain.csproj", "BuildingBlocks/AXDD.BuildingBlocks.Domain/"]
 COPY ["src/Services/Enterprise/AXDD.Services.Enterprise.Api/AXDD.Services.Enterprise.Api.csproj", "Services/Enterprise/AXDD.Services.Enterprise.Api/"]
