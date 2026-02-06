@@ -1,0 +1,315 @@
+### GIS Service API Examples
+### Base URL: http://localhost:5003
+
+### ========================================
+### Enterprise Location Management
+### ========================================
+
+### 1. Save Enterprise Location
+POST http://localhost:5003/api/v1/gis/enterprises/DN001/location
+Content-Type: application/json
+
+{
+  "latitude": 10.9520,
+  "longitude": 106.8180,
+  "address": "Lô A1, KCN Biên Hòa 1, Đồng Nai",
+  "accuracy": 10.0,
+  "notes": "Main factory location",
+  "isPrimary": true
+}
+
+### 2. Get Enterprise Location
+GET http://localhost:5003/api/v1/gis/enterprises/DN001/location
+
+### 3. Find Nearby Enterprises (5km radius)
+GET http://localhost:5003/api/v1/gis/enterprises/nearby?latitude=10.9500&longitude=106.8200&radiusKm=5
+
+### 4. Find Nearby Enterprises (10km radius)
+GET http://localhost:5003/api/v1/gis/enterprises/nearby?latitude=10.7500&longitude=106.9500&radiusKm=10
+
+### 5. Check if Point is in Industrial Zone
+GET http://localhost:5003/api/v1/gis/point-in-zone?latitude=10.9520&longitude=106.8180
+
+### 6. Delete Enterprise Location
+DELETE http://localhost:5003/api/v1/gis/enterprises/DN001/location
+
+### 7. Get All Enterprise Locations (Paginated)
+GET http://localhost:5003/api/v1/gis/enterprises/locations?pageNumber=1&pageSize=20
+
+### ========================================
+### Industrial Zone Management
+### ========================================
+
+### 8. Get All Industrial Zones
+GET http://localhost:5003/api/v1/gis/industrial-zones
+
+### 9. Search Industrial Zones
+GET http://localhost:5003/api/v1/gis/industrial-zones?search=Biên Hòa
+
+### 10. Get Zone Details
+# Replace {zoneId} with actual ID from list
+GET http://localhost:5003/api/v1/gis/industrial-zones/{{zoneId}}
+
+### 11. Get Zone Boundary (GeoJSON)
+GET http://localhost:5003/api/v1/gis/industrial-zones/{{zoneId}}/boundary
+
+### 12. Get Enterprises in Zone
+GET http://localhost:5003/api/v1/gis/industrial-zones/{{zoneId}}/enterprises
+
+### 13. Get Zone Area
+GET http://localhost:5003/api/v1/gis/industrial-zones/{{zoneId}}/area
+
+### 14. Create New Industrial Zone
+POST http://localhost:5003/api/v1/gis/industrial-zones
+Content-Type: application/json
+
+{
+  "name": "Khu Công Nghiệp Test",
+  "code": "KCN-TEST",
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [106.8000, 10.9000],
+        [106.8100, 10.9000],
+        [106.8100, 10.8900],
+        [106.8000, 10.8900],
+        [106.8000, 10.9000]
+      ]
+    ]
+  },
+  "province": "Đồng Nai",
+  "district": "Test District",
+  "description": "Test industrial zone for development",
+  "establishedYear": 2024
+}
+
+### 15. Update Zone Boundary
+PUT http://localhost:5003/api/v1/gis/industrial-zones/{{zoneId}}/boundary
+Content-Type: application/json
+
+{
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [106.8000, 10.9000],
+        [106.8150, 10.9000],
+        [106.8150, 10.8850],
+        [106.8000, 10.8850],
+        [106.8000, 10.9000]
+      ]
+    ]
+  }
+}
+
+### 16. Delete Industrial Zone
+DELETE http://localhost:5003/api/v1/gis/industrial-zones/{{zoneId}}
+
+### ========================================
+### Spatial Query Operations
+### ========================================
+
+### 17. Calculate Distance Between Two Points
+POST http://localhost:5003/api/v1/gis/spatial-query
+Content-Type: application/json
+
+{
+  "type": "DistanceBetweenPoints",
+  "point1": {
+    "latitude": 10.9500,
+    "longitude": 106.8200
+  },
+  "point2": {
+    "latitude": 10.7500,
+    "longitude": 106.9500
+  }
+}
+
+### 18. Check Point in Polygon
+POST http://localhost:5003/api/v1/gis/spatial-query
+Content-Type: application/json
+
+{
+  "type": "PointInPolygon",
+  "point1": {
+    "latitude": 10.9520,
+    "longitude": 106.8180
+  },
+  "polygon1": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [106.8150, 10.9550],
+        [106.8250, 10.9550],
+        [106.8250, 10.9450],
+        [106.8150, 10.9450],
+        [106.8150, 10.9550]
+      ]
+    ]
+  }
+}
+
+### 19. Create Buffer Around Point
+POST http://localhost:5003/api/v1/gis/spatial-query
+Content-Type: application/json
+
+{
+  "type": "BufferAroundPoint",
+  "point1": {
+    "latitude": 10.9500,
+    "longitude": 106.8200
+  },
+  "radiusKm": 2.5
+}
+
+### 20. Check Polygon Intersection
+POST http://localhost:5003/api/v1/gis/spatial-query
+Content-Type: application/json
+
+{
+  "type": "PolygonIntersection",
+  "polygon1": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [106.8150, 10.9550],
+        [106.8250, 10.9550],
+        [106.8250, 10.9450],
+        [106.8150, 10.9450],
+        [106.8150, 10.9550]
+      ]
+    ]
+  },
+  "polygon2": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [106.8200, 10.9500],
+        [106.8300, 10.9500],
+        [106.8300, 10.9400],
+        [106.8200, 10.9400],
+        [106.8200, 10.9500]
+      ]
+    ]
+  }
+}
+
+### 21. Validate Coordinates
+GET http://localhost:5003/api/v1/gis/spatial-query/validate-coordinates?latitude=10.9500&longitude=106.8200
+
+### 22. Validate Vietnam Bounds
+GET http://localhost:5003/api/v1/gis/spatial-query/validate-coordinates?latitude=21.0285&longitude=105.8542
+
+### 23. Invalid Coordinates (Out of Range)
+GET http://localhost:5003/api/v1/gis/spatial-query/validate-coordinates?latitude=100.0&longitude=200.0
+
+### ========================================
+### Map Operations
+### ========================================
+
+### 24. Get Map Tile (Redirect to OSM)
+GET http://localhost:5003/api/v1/maps/tiles/12/3217/2158
+
+### 25. Generate Static Map URL
+GET http://localhost:5003/api/v1/maps/static?latitude=10.9500&longitude=106.8200&zoom=12
+
+### 26. Generate Static Map with Custom Size
+GET http://localhost:5003/api/v1/maps/static?latitude=10.9500&longitude=106.8200&zoom=12&width=800&height=600
+
+### 27. Get Map Embed Information
+GET http://localhost:5003/api/v1/maps/embed-info?latitude=10.9500&longitude=106.8200&zoom=12
+
+### ========================================
+### Health & Status
+### ========================================
+
+### 28. Health Check
+GET http://localhost:5003/health
+
+### 29. API Documentation (Swagger)
+GET http://localhost:5003/swagger
+
+### ========================================
+### Advanced Examples
+### ========================================
+
+### 30. Bulk Save Multiple Locations
+# Save multiple enterprises in sequence
+
+POST http://localhost:5003/api/v1/gis/enterprises/DN002/location
+Content-Type: application/json
+
+{
+  "latitude": 10.9480,
+  "longitude": 106.8220,
+  "address": "Lô B5, KCN Biên Hòa 1",
+  "isPrimary": true
+}
+
+###
+
+POST http://localhost:5003/api/v1/gis/enterprises/DN003/location
+Content-Type: application/json
+
+{
+  "latitude": 10.7520,
+  "longitude": 106.9520,
+  "address": "KCN Long Thành",
+  "isPrimary": true
+}
+
+### 31. Complex Proximity Search Workflow
+# Step 1: Find nearby enterprises
+GET http://localhost:5003/api/v1/gis/enterprises/nearby?latitude=10.9500&longitude=106.8200&radiusKm=5
+
+### Step 2: For each enterprise, check which zone it's in
+GET http://localhost:5003/api/v1/gis/point-in-zone?latitude=10.9520&longitude=106.8180
+
+### 32. Zone Analysis Workflow
+# Step 1: Get all zones
+GET http://localhost:5003/api/v1/gis/industrial-zones
+
+### Step 2: Get enterprises in specific zone
+GET http://localhost:5003/api/v1/gis/industrial-zones/{{zoneId}}/enterprises
+
+### Step 3: Get zone boundary for mapping
+GET http://localhost:5003/api/v1/gis/industrial-zones/{{zoneId}}/boundary
+
+### ========================================
+### Error Cases (For Testing)
+### ========================================
+
+### 33. Invalid Latitude (> 90)
+POST http://localhost:5003/api/v1/gis/enterprises/TEST/location
+Content-Type: application/json
+
+{
+  "latitude": 100.0,
+  "longitude": 106.8200,
+  "isPrimary": true
+}
+
+### 34. Non-existent Enterprise Location
+GET http://localhost:5003/api/v1/gis/enterprises/NONEXISTENT/location
+
+### 35. Invalid Zone ID
+GET http://localhost:5003/api/v1/gis/industrial-zones/00000000-0000-0000-0000-000000000000
+
+### 36. Invalid GeoJSON (Unclosed Polygon)
+POST http://localhost:5003/api/v1/gis/industrial-zones
+Content-Type: application/json
+
+{
+  "name": "Invalid Zone",
+  "code": "INVALID",
+  "boundary": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [106.8000, 10.9000],
+        [106.8100, 10.9000]
+      ]
+    ]
+  }
+}
