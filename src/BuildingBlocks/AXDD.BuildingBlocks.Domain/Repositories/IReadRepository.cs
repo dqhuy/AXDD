@@ -21,10 +21,10 @@ public interface IReadRepository<T> where T : BaseEntity
     /// Gets an entity by its identifier including related entities
     /// </summary>
     /// <param name="id">The entity identifier</param>
-    /// <param name="includes">Related entities to include</param>
     /// <param name="cancellationToken">Cancellation token</param>
+    /// <param name="includes">Related entities to include</param>
     /// <returns>The entity if found, null otherwise</returns>
-    Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes);
+    Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includes);
 
     /// <summary>
     /// Gets all entities

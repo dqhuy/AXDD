@@ -25,13 +25,7 @@ internal sealed class UnitOfWork : IUnitOfWork
     {
         var type = typeof(T);
         
-        if (!_repositories.ContainsKey(type))
-        {
-            var repositoryInstance = new Repository<T>(_context);
-            _repositories[type] = repositoryInstance;
-        }
-
-        return (IRepository<T>)_repositories[type];
+        return (IRepository<T>)_repositories.GetOrAdd(type, _ => new Repository<T>(_context));
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

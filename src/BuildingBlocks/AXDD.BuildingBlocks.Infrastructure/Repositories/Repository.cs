@@ -22,12 +22,10 @@ internal class Repository<T> : IRepository<T> where T : BaseEntity
 
     public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        return await _dbSet.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
-    public async Task<T?> GetByIdAsync(Guid id, params Expression<Func<T, object>>[] includes)
+    public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken, params Expression<Func<T, object>>[] includes)
     {
         IQueryable<T> query = _dbSet;
         
@@ -36,43 +34,32 @@ internal class Repository<T> : IRepository<T> where T : BaseEntity
             query = query.Include(include);
         }
 
-        return await query
-            .Where(e => !e.IsDeleted)
-            .FirstOrDefaultAsync(e => e.Id == id);
+        return await query.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
     public async Task<IReadOnlyList<T>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .ToListAsync(cancellationToken);
+        return await _dbSet.ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .Where(predicate)
-            .ToListAsync(cancellationToken);
+        return await _dbSet.Where(predicate).ToListAsync(cancellationToken);
     }
 
     public async Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .FirstOrDefaultAsync(predicate, cancellationToken);
+        return await _dbSet.FirstOrDefaultAsync(predicate, cancellationToken);
     }
 
     public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        return await _dbSet
-            .Where(e => !e.IsDeleted)
-            .AnyAsync(predicate, cancellationToken);
+        return await _dbSet.AnyAsync(predicate, cancellationToken);
     }
 
     public async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null, CancellationToken cancellationToken = default)
     {
-        var query = _dbSet.Where(e => !e.IsDeleted);
+        var query = _dbSet.AsQueryable();
         
         if (predicate != null)
         {
@@ -84,57 +71,42 @@ internal class Repository<T> : IRepository<T> where T : BaseEntity
 
     public IQueryable<T> AsQueryable()
     {
-        return _dbSet.Where(e => !e.IsDeleted).AsQueryable();
+        return _dbSet.AsQueryable();
     }
 
     public async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
     {
-        entity.CreatedAt = DateTime.UtcNow;
         await _dbSet.AddAsync(entity, cancellationToken);
         return entity;
     }
 
     public async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
     {
-        var now = DateTime.UtcNow;
-        foreach (var entity in entities)
-        {
-            entity.CreatedAt = now;
-        }
         await _dbSet.AddRangeAsync(entities, cancellationToken);
     }
 
     public void Update(T entity)
     {
-        entity.UpdatedAt = DateTime.UtcNow;
         _dbSet.Update(entity);
     }
 
     public void UpdateRange(IEnumerable<T> entities)
     {
-        var now = DateTime.UtcNow;
-        foreach (var entity in entities)
-        {
-            entity.UpdatedAt = now;
-        }
         _dbSet.UpdateRange(entities);
     }
 
     public void Delete(T entity)
     {
-        // Soft delete
+        // Mark for soft delete - DbContext will handle the timestamps
         entity.IsDeleted = true;
-        entity.DeletedAt = DateTime.UtcNow;
         _dbSet.Update(entity);
     }
 
     public void DeleteRange(IEnumerable<T> entities)
     {
-        var now = DateTime.UtcNow;
         foreach (var entity in entities)
         {
             entity.IsDeleted = true;
-            entity.DeletedAt = now;
         }
         _dbSet.UpdateRange(entities);
     }
