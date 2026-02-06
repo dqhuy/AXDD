@@ -89,9 +89,12 @@ Hệ thống được module hóa thành các service độc lập để tối �
 | **Auth Service** | Xác thực tập trung, quản lý User/Role. Tích hợp SSO với VNeID và các hệ thống của tỉnh. |
 | **GIS Service** | Quản lý dữ liệu lớp bản đồ. Sử dụng **PostgreSQL với PostGIS** để lưu trữ và truy vấn tọa độ, diện tích, ranh giới các lô đất, hạ tầng KCN. |
 | **FileManager Service** | Quản lý file tương tự Dropbox/GDrive. Backend sử dụng **MinIO**. Hỗ trợ phân cấp thư mục, chia sẻ và quản quyền truy cập file. |
-| **Search Service** | Xây dựng chỉ mục (indexing) khi dữ liệu nghiệp vụ thay đổi. Sử dụng **Elasticsearch** để tìm kiếm full-text trên dữ liệu doanh nghiệp, dự án và nội dung tài liệu. |
-| **Log Service** | Ghi nhật ký toàn bộ hoạt động (Login, Logout, CRUD). Thông tin log được lưu vào DB chuyên dụng để phục vụ tra cứu, giám sát tuân thủ mà không ảnh hưởng hiệu năng DB nghiệp vụ. |
-| **OCR Service** | Tiếp nhận File ID từ FileManager/MinIO, thực hiện bóc tách thông tin giấy phép và trả kết quả cấu trúc hóa cho các service tác nghiệp. |
+| **Log Service** | Nhận log qua **RabbitMQ** message queue. Ghi nhật ký toàn bộ hoạt động (Login, Logout, CRUD). Thông tin log được lưu vào DB chuyên dụng để phục vụ tra cứu, giám sát tuân thủ mà không ảnh hưởng hiệu năng DB nghiệp vụ. |
+| **Notification Service** | Nhận yêu cầu gửi thông báo qua **RabbitMQ**. Xử lý gửi email, push notification và in-app notification cho người dùng. |
+| **Search Service** | Nhận index request qua **RabbitMQ**. Xây dựng chỉ mục (indexing) khi dữ liệu nghiệp vụ thay đổi. Sử dụng **Elasticsearch** để tìm kiếm full-text trên dữ liệu doanh nghiệp, dự án và nội dung tài liệu. |
+| **OCR Service** | Nhận request qua **RabbitMQ**. Tiếp nhận File ID từ FileManager/MinIO, thực hiện bóc tách thông tin giấy phép và trả kết quả cấu trúc hóa cho các service tác nghiệp. |
+| **EnterpriseReportManagement Service** | Quản lý nghiệp vụ nộp báo cáo định kỳ của doanh nghiệp. Cho phép doanh nghiệp nộp báo cáo và ban quản lý KCN thực hiện phê duyệt hoặc từ chối báo cáo. Gửi notification qua RabbitMQ khi có thay đổi trạng thái. |
+| **Report Service** | Thực hiện **background jobs** tổng hợp số liệu định kỳ hoặc theo nhu cầu. Cung cấp dữ liệu đã xử lý cho dashboard và kết xuất báo cáo. Không phụ trách việc nộp/phê duyệt báo cáo nghiệp vụ. |
 | **LGSP Service** | Tích hợp trục dữ liệu tỉnh để lấy thông tin từ hệ thống Một cửa và Quản lý văn bản hành chính. |
 | **Import Số hóa Service** | Tiếp nhận dữ liệu metadata và file PDF từ quy trình số hóa tài liệu bên thứ 3 để đẩy vào hệ thống. |
 | **Master Data Service** | Quản lý danh mục dùng chung (Hành chính, loại hình DN, trạng thái dự án...), đảm bảo tính nhất quán dữ liệu toàn hệ thống. |
@@ -120,12 +123,12 @@ Hệ thống được module hóa thành các service độc lập để tối �
 
 ### 4.1. Luồng Tiếp nhận và Xử lý Giấy phép (OCR)
 1. **Người dùng** upload file qua **FileManager Service** (lưu vào **MinIO**).
-2. **Nghiệp vụ Service** gửi yêu cầu OCR kèm File ID sang **OCR Service**.
-3. **OCR Service** lấy file từ MinIO, thực hiện bóc tách và trả kết quả JSON.
+2. **Nghiệp vụ Service** gửi yêu cầu OCR qua **RabbitMQ** (message queue).
+3. **OCR Service** nhận message, lấy file từ MinIO, thực hiện bóc tách và trả kết quả JSON.
 4. **Nghiệp vụ Service** lưu thông tin vào **SQL Server** và thông báo hoàn tất.
 
 ### 4.2. Luồng Tìm kiếm và Tra cứu
-1. Khi **Nghiệp vụ Service** cập nhật dữ liệu (DN, Dự án), một bản tin sẽ được gửi để **Search Service** cập nhật chỉ mục trong **Elasticsearch**.
+1. Khi **Nghiệp vụ Service** cập nhật dữ liệu (DN, Dự án), service gửi message qua **RabbitMQ** để **Search Service** cập nhật chỉ mục trong **Elasticsearch**.
 2. **Người dùng** thực hiện tìm kiếm qua **Search Service**.
 3. **Search Service** truy vấn Elasticsearch và trả kết quả ngay lập tức.
 
@@ -135,9 +138,21 @@ Hệ thống được module hóa thành các service độc lập để tối �
 3. Thông tin nghiệp vụ (thuộc tính doanh nghiệp) được kết nối từ hiệu năng của **SQL Server** thông qua ID duy nhất.
 
 ### 4.4. Luồng Ghi nhật ký (Logging)
-1. Toàn bộ hành động quan trọng (Auth, CRUD) tại các Service được gửi về **Log Service**.
-2. **Log Service** lưu trữ vào Database audit.
+1. Toàn bộ hành động quan trọng (Auth, CRUD, Login, Logout) tại các Service được gửi qua **RabbitMQ** (message queue).
+2. **Log Service** subscribe và nhận message từ queue, sau đó lưu trữ vào Database audit.
 3. Quản trị viên tra cứu lịch sử hoạt động trực tiếp thông qua giao diện của **Log Service**.
+
+### 4.5. Luồng Nộp và Phê duyệt Báo cáo Doanh nghiệp
+1. **Doanh nghiệp** nộp báo cáo định kỳ qua **EnterpriseReportManagement Service**.
+2. **Ban quản lý KCN** xem xét và phê duyệt/từ chối báo cáo.
+3. Khi có thay đổi trạng thái, service gửi notification qua **RabbitMQ** để **Notification Service** thông báo cho doanh nghiệp.
+4. Đồng thời gửi log message qua **RabbitMQ** để **Log Service** ghi nhận hoạt động.
+
+### 4.6. Luồng Tổng hợp Dữ liệu và Dashboard
+1. **Report Service** chạy background jobs định kỳ (daily, weekly, monthly) để tổng hợp dữ liệu từ các nguồn.
+2. Dữ liệu đã tổng hợp được lưu vào ReportDB.
+3. **Dashboard App** truy vấn dữ liệu từ **Report Service** để hiển thị biểu đồ, thống kê.
+4. **Report Service** cũng cung cấp API để kết xuất các báo cáo định kỳ ra file Excel/PDF.
 
 ---
 

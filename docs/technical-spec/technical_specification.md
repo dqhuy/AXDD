@@ -616,12 +616,14 @@ POST   /api/ocr/templates
 - .NET 9 Web API
 - Elasticsearch 8.x
 - NEST (Elasticsearch .NET client)
+- RabbitMQ (index request messaging)
 
 **Database:** Elasticsearch
 
 **Chức năng chính:**
 
 1. **Indexing**
+   - Nhận index request qua RabbitMQ
    - Index doanh nghiệp
    - Index dự án
    - Index tài liệu
@@ -637,6 +639,11 @@ POST   /api/ocr/templates
    - Search analytics
    - Popular searches
    - Search suggestions
+
+**Message Queue Integration:**
+- Subscribe to index messages from RabbitMQ
+- Handle Index/Update/Delete operations asynchronously
+- Ensure search index is always in sync with business data
 
 **API Endpoints:**
 
@@ -688,27 +695,33 @@ GET    /api/search/analytics
 
 **Công nghệ:**
 - .NET 9 Web API
+- RabbitMQ (notification request messaging)
 - SignalR (real-time)
 - SMTP (email)
-- RabbitMQ
 
 **Database:** SQL Server (NotifyDB)
 
 **Chức năng chính:**
 
 1. **Email Notifications**
+   - Subscribe to notification messages from RabbitMQ
    - Template-based emails
    - Bulk emails
    - Email tracking
 
 2. **In-App Notifications**
-   - Real-time notifications
+   - Real-time notifications via SignalR
    - Notification center
    - Read/unread status
 
 3. **Push Notifications** (future)
    - Mobile push
    - Browser push
+
+**Message Queue Integration:**
+- Subscribe to notification messages from RabbitMQ
+- Handle Email, In-App, and Push notifications asynchronously
+- Decouple notification sending from business processes
 
 **API Endpoints:**
 
@@ -809,6 +822,76 @@ CREATE TABLE LandPlots (
 
 CREATE INDEX idx_land_plots_geometry 
     ON LandPlots USING GIST(Geometry);
+```
+
+---
+
+#### 2.1.8. Log Service
+
+**Mục đích:** Ghi nhật ký tập trung cho toàn hệ thống
+
+**Công nghệ:**
+- .NET 9 Web API
+- RabbitMQ (log event messaging)
+- SQL Server (LogDB)
+
+**Database:** SQL Server (LogDB)
+
+**Chức năng chính:**
+
+1. **Audit Logging**
+   - Subscribe to log messages from RabbitMQ
+   - Ghi nhật ký CRUD operations
+   - Ghi nhật ký Login/Logout
+   - Ghi nhật ký System events
+
+2. **Log Query**
+   - Tra cứu lịch sử hoạt động
+   - Lọc theo user, entity, action, time
+   - Export log reports
+
+3. **Compliance & Security**
+   - Đảm bảo tuân thủ quy định
+   - Phát hiện hành vi bất thường
+   - Audit trails
+
+**Message Queue Integration:**
+- Subscribe to log messages from all business services
+- Process and store log entries asynchronously
+- Decouple logging from business operations
+
+**API Endpoints:**
+
+```
+GET    /api/logs
+GET    /api/logs/{id}
+GET    /api/logs/user/{userId}
+GET    /api/logs/entity/{entityType}/{entityId}
+POST   /api/logs/export
+GET    /api/logs/statistics
+```
+
+**Log Entry Schema:**
+
+```json
+{
+  "id": "uuid",
+  "timestamp": "ISO8601",
+  "userId": "uuid",
+  "userName": "string",
+  "eventType": "CRUD|Login|Logout|System",
+  "action": "Create|Read|Update|Delete",
+  "entityType": "Enterprise|Investment|Report",
+  "entityId": "uuid",
+  "ipAddress": "string",
+  "userAgent": "string",
+  "changes": {
+    "before": {},
+    "after": {}
+  },
+  "success": true,
+  "errorMessage": null
+}
 ```
 
 ---
@@ -977,26 +1060,58 @@ GET    /api/environment/trial-operations/{id}
 
 ---
 
-#### 2.2.7. Report Service
+#### 2.2.7. EnterpriseReportManagement Service
 
-**Mục đích:** Báo cáo và thống kê
+**Mục đích:** Quản lý nghiệp vụ nộp và phê duyệt báo cáo doanh nghiệp
+
+**Database:** SQL Server (EnterpriseReportDB)
+
+**Chức năng chính:**
+
+1. **Nộp báo cáo**
+   - Doanh nghiệp nộp báo cáo định kỳ
+   - Upload tài liệu đính kèm
+   - Lịch sử nộp báo cáo
+
+2. **Phê duyệt báo cáo**
+   - Ban quản lý KCN xem xét báo cáo
+   - Phê duyệt/Từ chối báo cáo
+   - Yêu cầu chỉnh sửa, bổ sung
+
+3. **Thông báo**
+   - Gửi notification qua RabbitMQ khi có thay đổi trạng thái
+   - Nhắc nhở doanh nghiệp nộp báo cáo
+
+**Tích hợp Message Queue:**
+- Publish message đến Notification Service qua RabbitMQ
+- Publish log events đến Log Service qua RabbitMQ
+
+---
+
+#### 2.2.8. Report Service
+
+**Mục đích:** Tổng hợp dữ liệu và cung cấp cho Dashboard
 
 **Database:** SQL Server (ReportDB)
 
 **Chức năng chính:**
 
-1. **Dashboard**
-   - Dashboard điều hành
-   - Thống kê tổng quan
+1. **Background Jobs**
+   - Job tổng hợp dữ liệu định kỳ (daily, weekly, monthly)
+   - Job tổng hợp theo nhu cầu (on-demand)
+   - Lập lịch và quản lý jobs
 
-2. **Reports**
-   - Báo cáo định kỳ
-   - Báo cáo chuyên đề
-   - Export to Excel/PDF
+2. **Data Aggregation**
+   - Tổng hợp số liệu từ các service nghiệp vụ
+   - Tính toán chỉ số KPI
+   - Pre-calculate dashboard data
 
-3. **Alerts**
-   - Cảnh báo hệ thống
-   - Cảnh báo nghiệp vụ
+3. **Report Generation**
+   - Cung cấp API cho Dashboard
+   - Export báo cáo Excel/PDF
+   - Báo cáo định kỳ tự động
+
+**Lưu ý:** Service này KHÔNG đảm nhiệm việc nộp/phê duyệt báo cáo nghiệp vụ. Chức năng đó thuộc về EnterpriseReportManagement Service.
 
 ---
 
