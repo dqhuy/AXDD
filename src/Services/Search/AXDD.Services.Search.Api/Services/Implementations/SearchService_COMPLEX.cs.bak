@@ -1,0 +1,778 @@
+using AXDD.Services.Search.Api.DTOs;
+using AXDD.Services.Search.Api.Exceptions;
+using AXDD.Services.Search.Api.Models;
+using AXDD.Services.Search.Api.Services.Interfaces;
+using AXDD.Services.Search.Api.Settings;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Clients.Elasticsearch.QueryDsl;
+using Elastic.Clients.Elasticsearch.Aggregations;
+using Microsoft.Extensions.Options;
+
+namespace AXDD.Services.Search.Api.Services.Implementations;
+
+/// <summary>
+/// Service for performing search operations
+/// </summary>
+public class SearchService : ISearchService
+{
+    private readonly IElasticsearchClientFactory _clientFactory;
+    private readonly ElasticsearchSettings _elasticsearchSettings;
+    private readonly SearchSettings _searchSettings;
+    private readonly ILogger<SearchService> _logger;
+
+    public SearchService(
+        IElasticsearchClientFactory clientFactory,
+        IOptions<ElasticsearchSettings> elasticsearchSettings,
+        IOptions<SearchSettings> searchSettings,
+        ILogger<SearchService> logger)
+    {
+        _clientFactory = clientFactory;
+        _elasticsearchSettings = elasticsearchSettings.Value;
+        _searchSettings = searchSettings.Value;
+        _logger = logger;
+    }
+
+    /// <inheritdoc/>
+    public async Task<DTOs.SearchResponse<EnterpriseSearchDocument>> SearchEnterprisesAsync(
+        EnterpriseSearchRequest request, 
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        try
+        {
+            var client = _clientFactory.GetClient();
+            var pageSize = Math.Min(request.PageSize, _searchSettings.MaxPageSize);
+            var from = (request.PageNumber - 1) * pageSize;
+
+            var searchResponse = await client.SearchAsync<EnterpriseSearchDocument>(s => s
+                .Index(_elasticsearchSettings.Indexes.Enterprises)
+                .From(from)
+                .Size(pageSize)
+                .Query(q => BuildEnterpriseQuery(q, request))
+                .Sort(BuildSort<EnterpriseSearchDocument>(request.SortBy, request.SortDirection))
+                .Highlight(h => h
+                    .Fields(f => f
+                        .Add(e => e.Name, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                        .Add(e => e.Address, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                        .Add(e => e.Description, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                    )
+                )
+                .Aggregations(a => BuildEnterpriseAggregations(a))
+                .TrackTotalHits(new TrackHits(true))
+            , cancellationToken);
+
+            if (!searchResponse.IsValidResponse)
+            {
+                throw new SearchException($"Search failed: {searchResponse.ElasticsearchServerError?.Error?.Reason}");
+            }
+
+            _logger.LogInformation("Enterprise search completed: query='{Query}', results={Count}, took={Took}ms",
+                request.Query, searchResponse.Total, searchResponse.Took);
+
+            return MapSearchResponse(searchResponse, request.PageNumber, pageSize);
+        }
+        catch (Exception ex) when (ex is not SearchException)
+        {
+            _logger.LogError(ex, "Error searching enterprises with query: {Query}", request.Query);
+            throw new SearchException("Failed to search enterprises", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<DTOs.SearchResponse<DocumentSearchDocument>> SearchDocumentsAsync(
+        DocumentSearchRequest request, 
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        try
+        {
+            var client = _clientFactory.GetClient();
+            var pageSize = Math.Min(request.PageSize, _searchSettings.MaxPageSize);
+            var from = (request.PageNumber - 1) * pageSize;
+
+            var searchResponse = await client.SearchAsync<DocumentSearchDocument>(s => s
+                .Index(_elasticsearchSettings.Indexes.Documents)
+                .From(from)
+                .Size(pageSize)
+                .Query(q => BuildDocumentQuery(q, request))
+                .Sort(BuildSort<DocumentSearchDocument>(request.SortBy, request.SortDirection))
+                .Highlight(h => h
+                    .Fields(f => f
+                        .Add(d => d.FileName, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                        .Add(d => d.Content, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                        .Add(d => d.Description, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                    )
+                )
+                .Aggregations(a => BuildDocumentAggregations(a))
+                .TrackTotalHits(new TrackHits(true))
+            , cancellationToken);
+
+            if (!searchResponse.IsValidResponse)
+            {
+                throw new SearchException($"Search failed: {searchResponse.ElasticsearchServerError?.Error?.Reason}");
+            }
+
+            _logger.LogInformation("Document search completed: query='{Query}', results={Count}, took={Took}ms",
+                request.Query, searchResponse.Total, searchResponse.Took);
+
+            return MapSearchResponse(searchResponse, request.PageNumber, pageSize);
+        }
+        catch (Exception ex) when (ex is not SearchException)
+        {
+            _logger.LogError(ex, "Error searching documents with query: {Query}", request.Query);
+            throw new SearchException("Failed to search documents", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<DTOs.SearchResponse<ProjectSearchDocument>> SearchProjectsAsync(
+        ProjectSearchRequest request, 
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        try
+        {
+            var client = _clientFactory.GetClient();
+            var pageSize = Math.Min(request.PageSize, _searchSettings.MaxPageSize);
+            var from = (request.PageNumber - 1) * pageSize;
+
+            var searchResponse = await client.SearchAsync<ProjectSearchDocument>(s => s
+                .Index(_elasticsearchSettings.Indexes.Projects)
+                .From(from)
+                .Size(pageSize)
+                .Query(q => BuildProjectQuery(q, request))
+                .Sort(BuildSort<ProjectSearchDocument>(request.SortBy, request.SortDirection))
+                .Highlight(h => h
+                    .Fields(f => f
+                        .Add(p => p.ProjectName, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                        .Add(p => p.Description, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                        .Add(p => p.Location, hf => hf.FragmentSize(_searchSettings.HighlightFragmentSize))
+                    )
+                )
+                .Aggregations(a => BuildProjectAggregations(a))
+                .TrackTotalHits(new TrackHits(true))
+            , cancellationToken);
+
+            if (!searchResponse.IsValidResponse)
+            {
+                throw new SearchException($"Search failed: {searchResponse.ElasticsearchServerError?.Error?.Reason}");
+            }
+
+            _logger.LogInformation("Project search completed: query='{Query}', results={Count}, took={Took}ms",
+                request.Query, searchResponse.Total, searchResponse.Took);
+
+            return MapSearchResponse(searchResponse, request.PageNumber, pageSize);
+        }
+        catch (Exception ex) when (ex is not SearchException)
+        {
+            _logger.LogError(ex, "Error searching projects with query: {Query}", request.Query);
+            throw new SearchException("Failed to search projects", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<MultiSearchResponse> SearchAllAsync(
+        string query, 
+        int pageSize = 5, 
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            throw new InvalidSearchQueryException(query, "Query cannot be empty");
+        }
+
+        try
+        {
+            var client = _clientFactory.GetClient();
+            var limitedPageSize = Math.Min(pageSize, 10); // Limit to 10 results per index for multi-search
+
+            var response = await client.MultiSearchAsync(ms => ms
+                .Searches(s => s
+                    .Search<EnterpriseSearchDocument>(ss => ss
+                        .Index(_elasticsearchSettings.Indexes.Enterprises)
+                        .Query(q => BuildSimpleQuery<EnterpriseSearchDocument>(q, query))
+                        .Size(limitedPageSize)
+                    )
+                    .Search<DocumentSearchDocument>(ss => ss
+                        .Index(_elasticsearchSettings.Indexes.Documents)
+                        .Query(q => BuildSimpleQuery<DocumentSearchDocument>(q, query))
+                        .Size(limitedPageSize)
+                    )
+                    .Search<ProjectSearchDocument>(ss => ss
+                        .Index(_elasticsearchSettings.Indexes.Projects)
+                        .Query(q => BuildSimpleQuery<ProjectSearchDocument>(q, query))
+                        .Size(limitedPageSize)
+                    )
+                )
+            , cancellationToken);
+
+            if (!response.IsValidResponse)
+            {
+                throw new SearchException($"Multi-search failed: {response.ElasticsearchServerError?.Error?.Reason}");
+            }
+
+            var result = new MultiSearchResponse
+            {
+                Took = response.Took,
+                Enterprises = new List<SearchResult<object>>(),
+                Documents = new List<SearchResult<object>>(),
+                Projects = new List<SearchResult<object>>()
+            };
+
+            var responses = response.GetResponses<object>().ToList();
+            
+            if (responses.Count > 0 && responses[0] is { IsValidResponse: true })
+            {
+                var enterpriseResponse = responses[0] as Elastic.Clients.Elasticsearch.Core.Search.ISearchResponse<EnterpriseSearchDocument>;
+                if (enterpriseResponse != null)
+                {
+                    result.Enterprises = enterpriseResponse.Hits.Select(h => new SearchResult<object>
+                    {
+                        Document = h.Source!,
+                        Score = h.Score ?? 0
+                    }).ToList();
+                }
+            }
+
+            if (responses.Count > 1 && responses[1] is { IsValidResponse: true })
+            {
+                var documentResponse = responses[1] as Elastic.Clients.Elasticsearch.Core.Search.ISearchResponse<DocumentSearchDocument>;
+                if (documentResponse != null)
+                {
+                    result.Documents = documentResponse.Hits.Select(h => new SearchResult<object>
+                    {
+                        Document = h.Source!,
+                        Score = h.Score ?? 0
+                    }).ToList();
+                }
+            }
+
+            if (responses.Count > 2 && responses[2] is { IsValidResponse: true })
+            {
+                var projectResponse = responses[2] as Elastic.Clients.Elasticsearch.Core.Search.ISearchResponse<ProjectSearchDocument>;
+                if (projectResponse != null)
+                {
+                    result.Projects = projectResponse.Hits.Select(h => new SearchResult<object>
+                    {
+                        Document = h.Source!,
+                        Score = h.Score ?? 0
+                    }).ToList();
+                }
+            }
+
+            result.TotalCount = result.Enterprises.Count + result.Documents.Count + result.Projects.Count;
+
+            _logger.LogInformation("Multi-search completed: query='{Query}', total={Total}, took={Took}ms",
+                query, result.TotalCount, result.Took);
+
+            return result;
+        }
+        catch (Exception ex) when (ex is not SearchException and not InvalidSearchQueryException)
+        {
+            _logger.LogError(ex, "Error in multi-search with query: {Query}", query);
+            throw new SearchException("Failed to perform multi-search", ex);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<SuggestionResponse> GetSuggestionsAsync(
+        string query, 
+        string type, 
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return new SuggestionResponse { Query = query };
+        }
+
+        try
+        {
+            var client = _clientFactory.GetClient();
+            var indexName = type.ToLowerInvariant() switch
+            {
+                "enterprise" or "enterprises" => _elasticsearchSettings.Indexes.Enterprises,
+                "document" or "documents" => _elasticsearchSettings.Indexes.Documents,
+                "project" or "projects" => _elasticsearchSettings.Indexes.Projects,
+                _ => throw new ArgumentException($"Unknown suggestion type: {type}")
+            };
+
+            var searchResponse = await client.SearchAsync<object>(s => s
+                .Index(indexName)
+                .Size(_searchSettings.SuggestionCount)
+                .Query(q => q
+                    .Bool(b => b
+                        .Should(
+                            sh => sh.MatchPhrase(m => m
+                                .Field("name")
+                                .Query(query)
+                                .Boost(2)
+                            ),
+                            sh => sh.Prefix(p => p
+                                .Field("name.keyword")
+                                .Value(query)
+                            )
+                        )
+                    )
+                )
+                .Source(false)
+                .Fields(f => f.Add("name"))
+            , cancellationToken);
+
+            if (!searchResponse.IsValidResponse)
+            {
+                throw new SearchException($"Suggestion search failed: {searchResponse.ElasticsearchServerError?.Error?.Reason}");
+            }
+
+            var suggestions = searchResponse.Hits
+                .Select(h => h.Fields?.TryGetValue("name", out var nameField) == true 
+                    ? nameField.ToString() 
+                    : null)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct()
+                .ToList();
+
+            return new SuggestionResponse
+            {
+                Suggestions = suggestions!,
+                Query = query,
+                Took = searchResponse.Took
+            };
+        }
+        catch (Exception ex) when (ex is not SearchException)
+        {
+            _logger.LogError(ex, "Error getting suggestions for query: {Query}, type: {Type}", query, type);
+            throw new SearchException($"Failed to get suggestions for type {type}", ex);
+        }
+    }
+
+    #region Query Builders
+
+    private Query BuildEnterpriseQuery(QueryDescriptor<EnterpriseSearchDocument> q, EnterpriseSearchRequest request)
+    {
+        var mustClauses = new List<Query>();
+        var shouldClauses = new List<Query>();
+
+        // Main search query
+        if (!string.IsNullOrWhiteSpace(request.Query))
+        {
+            var fuzziness = request.EnableFuzzy && _searchSettings.FuzzyEnabled && 
+                           request.Query.Length >= _searchSettings.MinTermLengthForFuzzy
+                ? new Fuzziness(_searchSettings.FuzzyMaxEditDistance)
+                : null;
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.Name)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+                .Boost(3)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.TaxCode)
+                .Query(request.Query)
+                .Boost(5)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.Address)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+                .Boost(1)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.IndustrialZoneName)
+                .Query(request.Query)
+                .Boost(2)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.Description)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+            ));
+        }
+
+        // Filters
+        if (!string.IsNullOrWhiteSpace(request.Filters.Status))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.Status).Value(request.Filters.Status)));
+        }
+
+        if (request.Filters.IndustrialZoneId.HasValue)
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.IndustrialZoneId).Value(request.Filters.IndustrialZoneId.Value)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Filters.IndustryCode))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.IndustryCode).Value(request.Filters.IndustryCode)));
+        }
+
+        if (request.Filters.RegisteredDateFrom.HasValue || request.Filters.RegisteredDateTo.HasValue)
+        {
+            mustClauses.Add(q.DateRange(r =>
+            {
+                var descriptor = r.Field(f => f.RegisteredDate);
+                if (request.Filters.RegisteredDateFrom.HasValue)
+                    descriptor = descriptor.Gte(request.Filters.RegisteredDateFrom.Value);
+                if (request.Filters.RegisteredDateTo.HasValue)
+                    descriptor = descriptor.Lte(request.Filters.RegisteredDateTo.Value);
+                return descriptor;
+            }));
+        }
+
+        if (request.Filters.MinRegisteredCapital.HasValue || request.Filters.MaxRegisteredCapital.HasValue)
+        {
+            mustClauses.Add(q.Range(r =>
+            {
+                var descriptor = r.NumberRange(nr =>
+                {
+                    var nrd = nr.Field(f => f.RegisteredCapital);
+                    if (request.Filters.MinRegisteredCapital.HasValue)
+                        nrd = nrd.Gte((double)request.Filters.MinRegisteredCapital.Value);
+                    if (request.Filters.MaxRegisteredCapital.HasValue)
+                        nrd = nrd.Lte((double)request.Filters.MaxRegisteredCapital.Value);
+                    return nrd;
+                });
+                return descriptor;
+            }));
+        }
+
+        // If no query, match all
+        if (shouldClauses.Count == 0 && mustClauses.Count == 0)
+        {
+            return q.MatchAll();
+        }
+
+        return q.Bool(b =>
+        {
+            var boolDescriptor = b;
+            if (mustClauses.Count > 0)
+                boolDescriptor = boolDescriptor.Must(mustClauses.ToArray());
+            if (shouldClauses.Count > 0)
+                boolDescriptor = boolDescriptor.Should(shouldClauses.ToArray()).MinimumShouldMatch(1);
+            return boolDescriptor;
+        });
+    }
+
+    private Query BuildDocumentQuery(QueryDescriptor<DocumentSearchDocument> q, DocumentSearchRequest request)
+    {
+        var mustClauses = new List<Query>();
+        var shouldClauses = new List<Query>();
+
+        // Main search query
+        if (!string.IsNullOrWhiteSpace(request.Query))
+        {
+            var fuzziness = request.EnableFuzzy && _searchSettings.FuzzyEnabled && 
+                           request.Query.Length >= _searchSettings.MinTermLengthForFuzzy
+                ? new Fuzziness(_searchSettings.FuzzyMaxEditDistance)
+                : null;
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.FileName)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+                .Boost(3)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.Content)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+                .Boost(2)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.Description)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.Tags)
+                .Query(request.Query)
+                .Boost(2)
+            ));
+        }
+
+        // Filters
+        if (!string.IsNullOrWhiteSpace(request.Filters.FileType))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.FileType).Value(request.Filters.FileType)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Filters.EnterpriseCode))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.EnterpriseCode).Value(request.Filters.EnterpriseCode)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Filters.Category))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.Category).Value(request.Filters.Category)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Filters.Status))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.Status).Value(request.Filters.Status)));
+        }
+
+        if (request.Filters.Tags != null && request.Filters.Tags.Count > 0)
+        {
+            mustClauses.Add(q.Terms(t => t.Field(f => f.Tags).Terms(new TermsQueryField(request.Filters.Tags.Select(tag => FieldValue.String(tag)).ToArray()))));
+        }
+
+        if (request.Filters.DateFrom.HasValue || request.Filters.DateTo.HasValue)
+        {
+            mustClauses.Add(q.DateRange(r =>
+            {
+                var descriptor = r.Field(f => f.UploadedAt);
+                if (request.Filters.DateFrom.HasValue)
+                    descriptor = descriptor.Gte(request.Filters.DateFrom.Value);
+                if (request.Filters.DateTo.HasValue)
+                    descriptor = descriptor.Lte(request.Filters.DateTo.Value);
+                return descriptor;
+            }));
+        }
+
+        // If no query, match all
+        if (shouldClauses.Count == 0 && mustClauses.Count == 0)
+        {
+            return q.MatchAll();
+        }
+
+        return q.Bool(b =>
+        {
+            var boolDescriptor = b;
+            if (mustClauses.Count > 0)
+                boolDescriptor = boolDescriptor.Must(mustClauses.ToArray());
+            if (shouldClauses.Count > 0)
+                boolDescriptor = boolDescriptor.Should(shouldClauses.ToArray()).MinimumShouldMatch(1);
+            return boolDescriptor;
+        });
+    }
+
+    private Query BuildProjectQuery(QueryDescriptor<ProjectSearchDocument> q, ProjectSearchRequest request)
+    {
+        var mustClauses = new List<Query>();
+        var shouldClauses = new List<Query>();
+
+        // Main search query
+        if (!string.IsNullOrWhiteSpace(request.Query))
+        {
+            var fuzziness = request.EnableFuzzy && _searchSettings.FuzzyEnabled && 
+                           request.Query.Length >= _searchSettings.MinTermLengthForFuzzy
+                ? new Fuzziness(_searchSettings.FuzzyMaxEditDistance)
+                : null;
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.ProjectName)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+                .Boost(3)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.ProjectCode)
+                .Query(request.Query)
+                .Boost(5)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.Description)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+                .Boost(2)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.Location)
+                .Query(request.Query)
+                .Fuzziness(fuzziness)
+            ));
+
+            shouldClauses.Add(q.Match(m => m
+                .Field(f => f.IndustrialZoneName)
+                .Query(request.Query)
+                .Boost(2)
+            ));
+        }
+
+        // Filters
+        if (!string.IsNullOrWhiteSpace(request.Filters.Status))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.Status).Value(request.Filters.Status)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Filters.EnterpriseCode))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.EnterpriseCode).Value(request.Filters.EnterpriseCode)));
+        }
+
+        if (request.Filters.IndustrialZoneId.HasValue)
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.IndustrialZoneId).Value(request.Filters.IndustrialZoneId.Value)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Filters.Category))
+        {
+            mustClauses.Add(q.Term(t => t.Field(f => f.Category).Value(request.Filters.Category)));
+        }
+
+        if (request.Filters.StartDateFrom.HasValue || request.Filters.StartDateTo.HasValue)
+        {
+            mustClauses.Add(q.DateRange(r =>
+            {
+                var descriptor = r.Field(f => f.StartDate);
+                if (request.Filters.StartDateFrom.HasValue)
+                    descriptor = descriptor.Gte(request.Filters.StartDateFrom.Value);
+                if (request.Filters.StartDateTo.HasValue)
+                    descriptor = descriptor.Lte(request.Filters.StartDateTo.Value);
+                return descriptor;
+            }));
+        }
+
+        if (request.Filters.MinInvestmentAmount.HasValue || request.Filters.MaxInvestmentAmount.HasValue)
+        {
+            mustClauses.Add(q.Range(r =>
+            {
+                var descriptor = r.NumberRange(nr =>
+                {
+                    var nrd = nr.Field(f => f.InvestmentAmount);
+                    if (request.Filters.MinInvestmentAmount.HasValue)
+                        nrd = nrd.Gte((double)request.Filters.MinInvestmentAmount.Value);
+                    if (request.Filters.MaxInvestmentAmount.HasValue)
+                        nrd = nrd.Lte((double)request.Filters.MaxInvestmentAmount.Value);
+                    return nrd;
+                });
+                return descriptor;
+            }));
+        }
+
+        // If no query, match all
+        if (shouldClauses.Count == 0 && mustClauses.Count == 0)
+        {
+            return q.MatchAll();
+        }
+
+        return q.Bool(b =>
+        {
+            var boolDescriptor = b;
+            if (mustClauses.Count > 0)
+                boolDescriptor = boolDescriptor.Must(mustClauses.ToArray());
+            if (shouldClauses.Count > 0)
+                boolDescriptor = boolDescriptor.Should(shouldClauses.ToArray()).MinimumShouldMatch(1);
+            return boolDescriptor;
+        });
+    }
+
+    private Query BuildSimpleQuery<T>(QueryDescriptor<T> q, string query)
+    {
+        return q.MultiMatch(m => m
+            .Query(query)
+            .Type(Elastic.Clients.Elasticsearch.QueryDsl.TextQueryType.BestFields)
+            .Fuzziness(new Fuzziness(1))
+        );
+    }
+
+    #endregion
+
+    #region Aggregation Builders
+
+    private Func<AggregationDescriptor<EnterpriseSearchDocument>, AggregationDescriptor<EnterpriseSearchDocument>> BuildEnterpriseAggregations(AggregationDescriptor<EnterpriseSearchDocument> a)
+    {
+        return a => a
+            .Add("by_status", new TermsAggregation { Field = "status", Size = 10 })
+            .Add("by_industry", new TermsAggregation { Field = "industryCode", Size = 20 })
+            .Add("by_zone", new TermsAggregation { Field = "industrialZoneName.keyword", Size = 20 });
+    }
+
+    private Func<AggregationDescriptor<DocumentSearchDocument>, AggregationDescriptor<DocumentSearchDocument>> BuildDocumentAggregations(AggregationDescriptor<DocumentSearchDocument> a)
+    {
+        return a => a
+            .Add("by_file_type", new TermsAggregation { Field = "fileType", Size = 10 })
+            .Add("by_category", new TermsAggregation { Field = "category", Size = 20 })
+            .Add("by_tags", new TermsAggregation { Field = "tags", Size = 30 });
+    }
+
+    private Func<AggregationDescriptor<ProjectSearchDocument>, AggregationDescriptor<ProjectSearchDocument>> BuildProjectAggregations(AggregationDescriptor<ProjectSearchDocument> a)
+    {
+        return a => a
+            .Add("by_status", new TermsAggregation { Field = "status", Size = 10 })
+            .Add("by_category", new TermsAggregation { Field = "category", Size = 20 })
+            .Add("by_zone", new TermsAggregation { Field = "industrialZoneName.keyword", Size = 20 });
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private Action<SortOptionsDescriptor<T>> BuildSort<T>(string? sortBy, string sortDirection)
+    {
+        return s =>
+        {
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                var order = sortDirection.ToLowerInvariant() == "asc" 
+                    ? SortOrder.Asc 
+                    : SortOrder.Desc;
+                
+                s.Field(sortBy, f => f.Order(order));
+            }
+            else
+            {
+                s.Score(ss => ss.Order(SortOrder.Desc));
+            }
+            return s;
+        };
+    }
+
+    private DTOs.SearchResponse<T> MapSearchResponse<T>(
+        Elastic.Clients.Elasticsearch.SearchResponse<T> elasticResponse, 
+        int pageNumber, 
+        int pageSize)
+    {
+        var response = new DTOs.SearchResponse<T>
+        {
+            Results = elasticResponse.Hits.Select(h => new SearchResult<T>
+            {
+                Document = h.Source!,
+                Score = h.Score ?? 0,
+                Highlights = h.Highlight?.ToDictionary(
+                    kvp => kvp.Key.ToString(),
+                    kvp => kvp.Value.ToList()
+                )
+            }).ToList(),
+            TotalCount = elasticResponse.Total,
+            Took = elasticResponse.Took,
+            MaxScore = elasticResponse.MaxScore,
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        // Map facets/aggregations
+        if (elasticResponse.Aggregations != null && elasticResponse.Aggregations.Count > 0)
+        {
+            response.Facets = new Dictionary<string, List<FacetItem>>();
+            
+            foreach (var agg in elasticResponse.Aggregations)
+            {
+                if (agg.Value is Elastic.Clients.Elasticsearch.Aggregations.StringTermsAggregate termsAgg)
+                {
+                    response.Facets[agg.Key] = termsAgg.Buckets.Select(b => new FacetItem
+                    {
+                        Value = b.Key.ToString(),
+                        Count = b.DocCount ?? 0
+                    }).ToList();
+                }
+            }
+        }
+
+        return response;
+    }
+
+    #endregion
+}
