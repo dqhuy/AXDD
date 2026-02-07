@@ -2,12 +2,16 @@
 @{
     ViewData["Title"] = "Quản lý Trường Metadata";
     var profile = ViewBag.Profile as AXDD.WebApp.Admin.Models.ApiModels.DocumentProfileDto;
+    var profileId = profile?.Id ?? Guid.Empty;
+    var profileName = profile?.ProfileName ?? "N/A";
+    var profileCode = profile?.ProfileCode ?? "N/A";
+    var profileType = profile?.ProfileType ?? "N/A";
 }
 
 @section Breadcrumb {
     <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
     <li class="breadcrumb-item"><a asp-action="Index">Hồ sơ Tài liệu</a></li>
-    <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@profile.Id">@profile.ProfileName</a></li>
+    <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@profileId">@profileName</a></li>
     <li class="breadcrumb-item active">Trường Metadata</li>
 }
 
@@ -20,7 +24,7 @@
                     Quản lý Trường Metadata
                 </h3>
                 <div class="card-tools">
-                    <a asp-action="CreateField" asp-route-profileId="@profile.Id" class="btn btn-primary btn-sm">
+                    <a asp-action="CreateField" asp-route-profileId="@profileId" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus"></i> Thêm Trường mới
                     </a>
                 </div>
@@ -29,10 +33,10 @@
             <div class="card-body">
                 <!-- Profile Info -->
                 <div class="alert alert-info">
-                    <h5><i class="icon fas fa-info-circle"></i> Hồ sơ: @profile.ProfileName</h5>
+                    <h5><i class="icon fas fa-info-circle"></i> Hồ sơ: @profileName</h5>
                     <p class="mb-0">
-                        <strong>Mã:</strong> @profile.ProfileCode | 
-                        <strong>Loại:</strong> @profile.ProfileType
+                        <strong>Mã:</strong> @profileCode | 
+                        <strong>Loại:</strong> @profileType
                     </p>
                 </div>
 
@@ -99,7 +103,7 @@
                                                 </a>
                                                 <button type="button" 
                                                         class="btn btn-danger" 
-                                                        onclick="confirmDeleteField('@field.Id', '@field.FieldLabel', '@profile.Id')"
+                                                        onclick="confirmDeleteField('@field.Id', '@field.FieldLabel', '@profileId')"
                                                         title="Xóa">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -124,7 +128,7 @@
                         <i class="fas fa-tags fa-4x mb-3"></i>
                         <h5>Chưa có trường metadata nào</h5>
                         <p>Nhấn "Thêm Trường mới" để thêm trường metadata đầu tiên.</p>
-                        <a asp-action="CreateField" asp-route-profileId="@profile.Id" class="btn btn-primary">
+                        <a asp-action="CreateField" asp-route-profileId="@profileId" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Thêm Trường mới
                         </a>
                     </div>
@@ -132,7 +136,7 @@
             </div>
 
             <div class="card-footer">
-                <a asp-action="Details" asp-route-id="@profile.Id" class="btn btn-default">
+                <a asp-action="Details" asp-route-id="@profileId" class="btn btn-default">
                     <i class="fas fa-arrow-left"></i> Quay lại Chi tiết Hồ sơ
                 </a>
             </div>
