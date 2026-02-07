@@ -52,6 +52,11 @@ builder.Services.AddScoped<IFileVersionService, FileVersionService>();
 builder.Services.AddScoped<IFileShareService, FileShareService>();
 builder.Services.AddScoped<IStorageQuotaService, StorageQuotaService>();
 
+// Register Document Profile Management services
+builder.Services.AddScoped<IDocumentProfileService, DocumentProfileService>();
+builder.Services.AddScoped<IProfileMetadataFieldService, ProfileMetadataFieldService>();
+builder.Services.AddScoped<IDocumentProfileDocumentService, DocumentProfileDocumentService>();
+
 // Add Controllers
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
