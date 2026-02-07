@@ -50,6 +50,26 @@ public class FileManagerDbContext : BaseDbContext
     public DbSet<StorageQuota> StorageQuotas { get; set; } = null!;
 
     /// <summary>
+    /// Gets or sets the DocumentProfile entities
+    /// </summary>
+    public DbSet<DocumentProfile> DocumentProfiles { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the ProfileMetadataField entities
+    /// </summary>
+    public DbSet<ProfileMetadataField> ProfileMetadataFields { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the DocumentProfileDocument entities
+    /// </summary>
+    public DbSet<DocumentProfileDocument> DocumentProfileDocuments { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the DocumentMetadataValue entities
+    /// </summary>
+    public DbSet<DocumentMetadataValue> DocumentMetadataValues { get; set; } = null!;
+
+    /// <summary>
     /// Configures the entity models
     /// </summary>
     /// <param name="modelBuilder">Model builder</param>
@@ -212,6 +232,177 @@ public class FileManagerDbContext : BaseDbContext
                 .HasMaxLength(50);
 
             entity.HasIndex(e => e.EnterpriseCode).IsUnique();
+        });
+
+        // DocumentProfile configuration
+        modelBuilder.Entity<DocumentProfile>(entity =>
+        {
+            entity.ToTable("DocumentProfiles");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(e => e.Code)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(e => e.EnterpriseCode)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.ProfileType)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(e => e.Path)
+                .IsRequired()
+                .HasMaxLength(2000);
+
+            entity.Property(e => e.Description)
+                .HasMaxLength(2000);
+
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.HasOne(e => e.ParentProfile)
+                .WithMany(p => p.ChildProfiles)
+                .HasForeignKey(e => e.ParentProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.EnterpriseCode);
+            entity.HasIndex(e => e.Code);
+            entity.HasIndex(e => new { e.EnterpriseCode, e.Code }).IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+            entity.HasIndex(e => e.ParentProfileId);
+            entity.HasIndex(e => e.ProfileType);
+            entity.HasIndex(e => e.Status);
+        });
+
+        // ProfileMetadataField configuration
+        modelBuilder.Entity<ProfileMetadataField>(entity =>
+        {
+            entity.ToTable("ProfileMetadataFields");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.FieldName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(e => e.DisplayLabel)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            entity.Property(e => e.DataType)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.DefaultValue)
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.Placeholder)
+                .HasMaxLength(255);
+
+            entity.Property(e => e.SelectOptions)
+                .HasMaxLength(4000);
+
+            entity.Property(e => e.ValidationPattern)
+                .HasMaxLength(500);
+
+            entity.Property(e => e.ValidationMessage)
+                .HasMaxLength(500);
+
+            entity.Property(e => e.HelpText)
+                .HasMaxLength(1000);
+
+            entity.HasOne(e => e.Profile)
+                .WithMany(p => p.MetadataFields)
+                .HasForeignKey(e => e.ProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.ProfileId);
+            entity.HasIndex(e => new { e.ProfileId, e.FieldName }).IsUnique()
+                .HasFilter("[IsDeleted] = 0");
+        });
+
+        // DocumentProfileDocument configuration
+        modelBuilder.Entity<DocumentProfileDocument>(entity =>
+        {
+            entity.ToTable("DocumentProfileDocuments");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            entity.Property(e => e.Description)
+                .HasMaxLength(2000);
+
+            entity.Property(e => e.DocumentType)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.Property(e => e.DocumentNumber)
+                .HasMaxLength(100);
+
+            entity.Property(e => e.IssuingAuthority)
+                .HasMaxLength(500);
+
+            entity.Property(e => e.Status)
+                .IsRequired()
+                .HasMaxLength(50);
+
+            entity.Property(e => e.Notes)
+                .HasMaxLength(2000);
+
+            entity.HasOne(e => e.Profile)
+                .WithMany(p => p.Documents)
+                .HasForeignKey(e => e.ProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.FileMetadata)
+                .WithMany()
+                .HasForeignKey(e => e.FileMetadataId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.ProfileId);
+            entity.HasIndex(e => e.FileMetadataId);
+            entity.HasIndex(e => e.DocumentType);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ExpiryDate);
+        });
+
+        // DocumentMetadataValue configuration
+        modelBuilder.Entity<DocumentMetadataValue>(entity =>
+        {
+            entity.ToTable("DocumentMetadataValues");
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.StringValue)
+                .HasMaxLength(4000);
+
+            entity.Property(e => e.NumberValue)
+                .HasPrecision(18, 6);
+
+            entity.Property(e => e.JsonValue)
+                .HasMaxLength(8000);
+
+            entity.HasOne(e => e.Document)
+                .WithMany(d => d.MetadataValues)
+                .HasForeignKey(e => e.DocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.MetadataField)
+                .WithMany(f => f.MetadataValues)
+                .HasForeignKey(e => e.MetadataFieldId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.DocumentId);
+            entity.HasIndex(e => e.MetadataFieldId);
+            entity.HasIndex(e => new { e.DocumentId, e.MetadataFieldId }).IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
     }
 }
