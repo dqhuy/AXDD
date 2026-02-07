@@ -10,9 +10,9 @@ public abstract class BaseEntity
     private readonly List<IDomainEvent> _domainEvents = [];
 
     /// <summary>
-    /// Gets the unique identifier of the entity
+    /// Gets or sets the unique identifier of the entity
     /// </summary>
-    public Guid Id { get; protected set; }
+    public Guid Id { get; set; }
 
     /// <summary>
     /// Gets or sets the date and time when the entity was created
