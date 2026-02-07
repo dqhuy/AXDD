@@ -1,0 +1,362 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.DocumentProfileListViewModel
+@{
+    ViewData["Title"] = "Quản lý Hồ sơ Tài liệu";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+    @if (Model.Breadcrumbs != null && Model.Breadcrumbs.Any())
+    {
+        @foreach (var crumb in Model.Breadcrumbs)
+        {
+            <li class="breadcrumb-item">
+                <a asp-action="Index" asp-route-parentProfileId="@crumb.ProfileId">@crumb.Name</a>
+            </li>
+        }
+    }
+    <li class="breadcrumb-item active">Hồ sơ Tài liệu</li>
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-folder-open mr-2"></i>
+                    @if (Model.ParentProfileId.HasValue)
+                    {
+                        <span>Hồ sơ con</span>
+                    }
+                    else
+                    {
+                        <span>Tất cả Hồ sơ</span>
+                    }
+                </h3>
+                <div class="card-tools">
+                    <div class="btn-group">
+                        <a asp-action="Create" 
+                           asp-route-parentProfileId="@Model.ParentProfileId" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Tạo Hồ sơ mới
+                        </a>
+                        <button type="button" class="btn btn-sm btn-default" onclick="toggleViewMode()">
+                            <i class="fas fa-th" id="viewModeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Form -->
+            <div class="card-body border-bottom">
+                <form asp-action="Index" method="get" class="form-horizontal">
+                    <input type="hidden" name="parentProfileId" value="@Model.ParentProfileId" />
+                    <input type="hidden" name="viewMode" value="@Model.ViewMode" id="viewModeInput" />
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="searchTerm">Tìm kiếm</label>
+                                <input type="text" 
+                                       class="form-control form-control-sm" 
+                                       id="searchTerm" 
+                                       name="searchTerm" 
+                                       value="@Model.SearchTerm"
+                                       placeholder="Tìm theo tên hoặc mã...">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="profileType">Loại hồ sơ</label>
+                                <select class="form-control form-control-sm" id="profileType" name="profileType">
+                                    <option value="">Tất cả</option>
+                                    <option value="Folder" selected="@(Model.ProfileType == "Folder")">Thư mục</option>
+                                    <option value="Project" selected="@(Model.ProfileType == "Project")">Dự án</option>
+                                    <option value="Contract" selected="@(Model.ProfileType == "Contract")">Hợp đồng</option>
+                                    <option value="Report" selected="@(Model.ProfileType == "Report")">Báo cáo</option>
+                                    <option value="Other" selected="@(Model.ProfileType == "Other")">Khác</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="status">Trạng thái</label>
+                                <select class="form-control form-control-sm" id="status" name="status">
+                                    <option value="">Tất cả</option>
+                                    <option value="Open" selected="@(Model.Status == "Open")">Đang mở</option>
+                                    <option value="Closed" selected="@(Model.Status == "Closed")">Đã đóng</option>
+                                    <option value="Archived" selected="@(Model.Status == "Archived")">Lưu trữ</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="isTemplate">Loại</label>
+                                <select class="form-control form-control-sm" id="isTemplate" name="isTemplate">
+                                    <option value="">Tất cả</option>
+                                    <option value="false" selected="@(Model.IsTemplate == false)">Hồ sơ thường</option>
+                                    <option value="true" selected="@(Model.IsTemplate == true)">Mẫu hồ sơ</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-info btn-sm btn-block">
+                                        <i class="fas fa-search"></i> Lọc
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <a asp-action="Index" class="btn btn-default btn-sm btn-block">
+                                        <i class="fas fa-redo"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Results count -->
+                <div class="row">
+                    <div class="col-12">
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            Hiển thị @Model.Profiles.Count trong tổng số @Model.TotalCount hồ sơ
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="card-body">
+                @if (Model.Profiles != null && Model.Profiles.Any())
+                {
+                    <div id="gridView" style="display: @(Model.ViewMode == "grid" ? "block" : "none")">
+                        <div class="row">
+                            @foreach (var profile in Model.Profiles)
+                            {
+                                <div class="col-lg-3 col-md-4 col-sm-6 col-12 mb-3">
+                                    @await Html.PartialAsync("_ProfileCard", profile)
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div id="listView" style="display: @(Model.ViewMode == "list" ? "block" : "none")">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px"></th>
+                                        <th>Tên hồ sơ</th>
+                                        <th>Mã hồ sơ</th>
+                                        <th>Loại</th>
+                                        <th>Trạng thái</th>
+                                        <th>Số tài liệu</th>
+                                        <th>Ngày tạo</th>
+                                        <th style="width: 150px">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var profile in Model.Profiles)
+                                    {
+                                        <tr>
+                                            <td class="text-center">
+                                                <i class="@profile.Icon fa-2x @profile.ColorClass"></i>
+                                            </td>
+                                            <td>
+                                                <strong>@profile.ProfileName</strong>
+                                                @if (!string.IsNullOrEmpty(profile.Description))
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">@profile.Description</small>
+                                                }
+                                                @if (profile.IsTemplate)
+                                                {
+                                                    <br />
+                                                    <span class="badge badge-info"><i class="fas fa-star"></i> Mẫu</span>
+                                                }
+                                            </td>
+                                            <td><code>@profile.ProfileCode</code></td>
+                                            <td><span class="badge badge-secondary">@profile.ProfileType</span></td>
+                                            <td><span class="badge @profile.BadgeClass">@profile.Status</span></td>
+                                            <td>
+                                                <span class="badge badge-light">
+                                                    <i class="fas fa-file"></i> @profile.DocumentCount
+                                                </span>
+                                                @if (profile.ChildProfileCount > 0)
+                                                {
+                                                    <span class="badge badge-light ml-1">
+                                                        <i class="fas fa-folder"></i> @profile.ChildProfileCount
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>@profile.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a asp-action="Details" asp-route-id="@profile.Id" class="btn btn-info" title="Chi tiết">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a asp-action="Edit" asp-route-id="@profile.Id" class="btn btn-warning" title="Sửa">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-danger" onclick="confirmDelete('@profile.Id', '@profile.ProfileName')" title="Xóa">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (Model.TotalPages > 1)
+                    {
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination justify-content-center">
+                                        @if (Model.PageNumber > 1)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" 
+                                                   asp-action="Index" 
+                                                   asp-route-pageNumber="@(Model.PageNumber - 1)"
+                                                   asp-route-parentProfileId="@Model.ParentProfileId"
+                                                   asp-route-searchTerm="@Model.SearchTerm"
+                                                   asp-route-profileType="@Model.ProfileType"
+                                                   asp-route-status="@Model.Status"
+                                                   asp-route-isTemplate="@Model.IsTemplate"
+                                                   asp-route-viewMode="@Model.ViewMode">
+                                                    <i class="fas fa-chevron-left"></i>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                                        {
+                                            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                                <a class="page-link" 
+                                                   asp-action="Index" 
+                                                   asp-route-pageNumber="@i"
+                                                   asp-route-parentProfileId="@Model.ParentProfileId"
+                                                   asp-route-searchTerm="@Model.SearchTerm"
+                                                   asp-route-profileType="@Model.ProfileType"
+                                                   asp-route-status="@Model.Status"
+                                                   asp-route-isTemplate="@Model.IsTemplate"
+                                                   asp-route-viewMode="@Model.ViewMode">
+                                                    @i
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Model.PageNumber < Model.TotalPages)
+                                        {
+                                            <li class="page-item">
+                                                <a class="page-link" 
+                                                   asp-action="Index" 
+                                                   asp-route-pageNumber="@(Model.PageNumber + 1)"
+                                                   asp-route-parentProfileId="@Model.ParentProfileId"
+                                                   asp-route-searchTerm="@Model.SearchTerm"
+                                                   asp-route-profileType="@Model.ProfileType"
+                                                   asp-route-status="@Model.Status"
+                                                   asp-route-isTemplate="@Model.IsTemplate"
+                                                   asp-route-viewMode="@Model.ViewMode">
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-folder-open fa-4x mb-3 d-block"></i>
+                        <h5>Không có hồ sơ nào</h5>
+                        <p>Nhấn "Tạo Hồ sơ mới" để bắt đầu.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Xác nhận Xóa
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa hồ sơ <strong id="profileName"></strong>?</p>
+                <p class="text-danger">Hành động này không thể hoàn tác!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Xóa
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var currentViewMode = '@Model.ViewMode';
+        
+        $(document).ready(function() {
+            updateViewModeIcon();
+        });
+
+        function toggleViewMode() {
+            currentViewMode = currentViewMode === 'grid' ? 'list' : 'grid';
+            $('#viewModeInput').val(currentViewMode);
+            
+            if (currentViewMode === 'grid') {
+                $('#gridView').show();
+                $('#listView').hide();
+            } else {
+                $('#gridView').hide();
+                $('#listView').show();
+            }
+            
+            updateViewModeIcon();
+        }
+
+        function updateViewModeIcon() {
+            if (currentViewMode === 'grid') {
+                $('#viewModeIcon').removeClass('fa-list').addClass('fa-th');
+            } else {
+                $('#viewModeIcon').removeClass('fa-th').addClass('fa-list');
+            }
+        }
+
+        function confirmDelete(id, name) {
+            $('#profileName').text(name);
+            $('#deleteForm').attr('action', '/DocumentProfile/Delete/' + id);
+            $('#deleteModal').modal('show');
+        }
+    </script>
+}

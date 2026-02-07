@@ -157,3 +157,216 @@ public class ReportsByStatusDto
     public string Status { get; set; } = string.Empty;
     public int Count { get; set; }
 }
+
+// ============================================
+// Document Profile Management API Models
+// ============================================
+
+/// <summary>
+/// Document Profile DTO
+/// </summary>
+public class DocumentProfileDto
+{
+    public Guid Id { get; set; }
+    public string ProfileCode { get; set; } = string.Empty;
+    public string ProfileName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string EnterpriseCode { get; set; } = string.Empty;
+    public Guid? ParentProfileId { get; set; }
+    public string? ParentProfileName { get; set; }
+    public string ProfileType { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public bool IsTemplate { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public DateTime? OpenedAt { get; set; }
+    public DateTime? ClosedAt { get; set; }
+    public DateTime? ArchivedAt { get; set; }
+    public int DocumentCount { get; set; }
+    public int ChildProfileCount { get; set; }
+}
+
+/// <summary>
+/// Create Document Profile Request
+/// </summary>
+public class CreateDocumentProfileRequest
+{
+    public string ProfileCode { get; set; } = string.Empty;
+    public string ProfileName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string EnterpriseCode { get; set; } = string.Empty;
+    public Guid? ParentProfileId { get; set; }
+    public string ProfileType { get; set; } = string.Empty;
+    public bool IsTemplate { get; set; }
+}
+
+/// <summary>
+/// Update Document Profile Request
+/// </summary>
+public class UpdateDocumentProfileRequest
+{
+    public string ProfileName { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string ProfileType { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Profile Hierarchy DTO
+/// </summary>
+public class ProfileHierarchyDto
+{
+    public Guid Id { get; set; }
+    public string ProfileCode { get; set; } = string.Empty;
+    public string ProfileName { get; set; } = string.Empty;
+    public string ProfileType { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public int DocumentCount { get; set; }
+    public List<ProfileHierarchyDto> Children { get; set; } = new();
+}
+
+/// <summary>
+/// Profile Metadata Field DTO
+/// </summary>
+public class ProfileMetadataFieldDto
+{
+    public Guid Id { get; set; }
+    public Guid ProfileId { get; set; }
+    public string FieldName { get; set; } = string.Empty;
+    public string FieldLabel { get; set; } = string.Empty;
+    public string FieldType { get; set; } = string.Empty;
+    public bool IsRequired { get; set; }
+    public int DisplayOrder { get; set; }
+    public string? ValidationRules { get; set; }
+    public string? DefaultValue { get; set; }
+    public string? Options { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Create Profile Metadata Field Request
+/// </summary>
+public class CreateProfileMetadataFieldRequest
+{
+    public Guid ProfileId { get; set; }
+    public string FieldName { get; set; } = string.Empty;
+    public string FieldLabel { get; set; } = string.Empty;
+    public string FieldType { get; set; } = string.Empty;
+    public bool IsRequired { get; set; }
+    public int DisplayOrder { get; set; }
+    public string? ValidationRules { get; set; }
+    public string? DefaultValue { get; set; }
+    public string? Options { get; set; }
+}
+
+/// <summary>
+/// Update Profile Metadata Field Request
+/// </summary>
+public class UpdateProfileMetadataFieldRequest
+{
+    public string FieldLabel { get; set; } = string.Empty;
+    public string FieldType { get; set; } = string.Empty;
+    public bool IsRequired { get; set; }
+    public int DisplayOrder { get; set; }
+    public string? ValidationRules { get; set; }
+    public string? DefaultValue { get; set; }
+    public string? Options { get; set; }
+}
+
+/// <summary>
+/// Document Profile Document DTO
+/// </summary>
+public class DocumentProfileDocumentDto
+{
+    public Guid Id { get; set; }
+    public Guid ProfileId { get; set; }
+    public Guid DocumentId { get; set; }
+    public string DocumentName { get; set; } = string.Empty;
+    public string DocumentCode { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string FileType { get; set; } = string.Empty;
+    public long FileSize { get; set; }
+    public int DisplayOrder { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTime AddedAt { get; set; }
+    public Guid AddedBy { get; set; }
+    public string? FilePath { get; set; }
+}
+
+/// <summary>
+/// Add Document to Profile Request
+/// </summary>
+public class AddDocumentToProfileRequest
+{
+    public Guid ProfileId { get; set; }
+    public Guid DocumentId { get; set; }
+    public string? Description { get; set; }
+    public int DisplayOrder { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+}
+
+/// <summary>
+/// Update Document Profile Document Request
+/// </summary>
+public class UpdateDocumentProfileDocumentRequest
+{
+    public string? Description { get; set; }
+    public int DisplayOrder { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+    public string Status { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Document Metadata Value DTO
+/// </summary>
+public class DocumentMetadataValueDto
+{
+    public Guid DocumentId { get; set; }
+    public Guid FieldId { get; set; }
+    public string FieldName { get; set; } = string.Empty;
+    public string FieldLabel { get; set; } = string.Empty;
+    public string FieldType { get; set; } = string.Empty;
+    public string? Value { get; set; }
+}
+
+/// <summary>
+/// Set Metadata Value Request
+/// </summary>
+public class SetMetadataValueRequest
+{
+    public Guid FieldId { get; set; }
+    public string? Value { get; set; }
+}
+
+/// <summary>
+/// Reorder Request
+/// </summary>
+public class ReorderRequest
+{
+    public List<Guid> Ids { get; set; } = new();
+}
+
+/// <summary>
+/// Copy Fields Request
+/// </summary>
+public class CopyFieldsRequest
+{
+    public Guid SourceProfileId { get; set; }
+    public Guid TargetProfileId { get; set; }
+}
+
+/// <summary>
+/// Move Document Request
+/// </summary>
+public class MoveDocumentRequest
+{
+    public Guid TargetProfileId { get; set; }
+}
+
+/// <summary>
+/// Copy Document Request
+/// </summary>
+public class CopyDocumentRequest
+{
+    public Guid TargetProfileId { get; set; }
+}

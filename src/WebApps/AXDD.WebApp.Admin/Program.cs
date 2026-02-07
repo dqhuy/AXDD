@@ -42,6 +42,12 @@ builder.Services.AddHttpClient<INotificationApiService, NotificationApiService>(
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+builder.Services.AddHttpClient<IDocumentProfileApiService, DocumentProfileApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiServices["FileManagerService"] ?? apiServices["DocumentService"]!);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 // Configure Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>

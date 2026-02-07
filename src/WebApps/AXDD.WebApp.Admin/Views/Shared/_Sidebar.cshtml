@@ -54,25 +54,38 @@
                 </li>
 
                 <!-- Document Management -->
-                <li class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" ? "menu-open" : "")">
-                    <a href="#" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" ? "active" : "")">
+                <li class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" || ViewContext.RouteData.Values["controller"]?.ToString() == "DocumentProfile" ? "menu-open" : "")">
+                    <a href="#" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" || ViewContext.RouteData.Values["controller"]?.ToString() == "DocumentProfile" ? "active" : "")">
                         <i class="nav-icon fas fa-file-alt"></i>
                         <p>
-                            Documents
+                            Quản lý Tài liệu
                             <i class="right fas fa-angle-left"></i>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a asp-controller="Document" asp-action="Index" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>All Documents</p>
+                            <a asp-controller="Document" asp-action="Index" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                                <i class="far fa-file nav-icon"></i>
+                                <p>Tài liệu</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a asp-controller="Document" asp-action="Upload" class="nav-link">
+                            <a asp-controller="Document" asp-action="Upload" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" && ViewContext.RouteData.Values["action"]?.ToString() == "Upload" ? "active" : "")">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Upload Document</p>
+                                <p>Tải lên Tài liệu</p>
+                            </a>
+                        </li>
+                        <li class="nav-header">HỒ SƠ TÀI LIỆU</li>
+                        <li class="nav-item">
+                            <a asp-controller="DocumentProfile" asp-action="Index" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "DocumentProfile" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+                                <i class="far fa-folder-open nav-icon"></i>
+                                <p>Tất cả Hồ sơ</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="DocumentProfile" asp-action="Index" asp-route-isTemplate="true" class="nav-link">
+                                <i class="far fa-star nav-icon"></i>
+                                <p>Mẫu Hồ sơ</p>
                             </a>
                         </li>
                     </ul>

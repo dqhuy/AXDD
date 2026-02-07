@@ -1,0 +1,148 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.DocumentProfileFormViewModel
+@{
+    ViewData["Title"] = Model.IsEditMode ? "Chỉnh sửa Hồ sơ" : "Tạo Hồ sơ mới";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+    <li class="breadcrumb-item"><a asp-action="Index">Hồ sơ Tài liệu</a></li>
+    <li class="breadcrumb-item active">@(Model.IsEditMode ? "Chỉnh sửa" : "Tạo mới")</li>
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas @(Model.IsEditMode ? "fa-edit" : "fa-plus") mr-2"></i>
+                    @(Model.IsEditMode ? "Chỉnh sửa Hồ sơ" : "Tạo Hồ sơ mới")
+                </h3>
+            </div>
+
+            <form asp-action="@(Model.IsEditMode ? "Edit" : "Create")" method="post">
+                <div class="card-body">
+                    @if (!Model.IsEditMode)
+                    {
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    }
+
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="form-group">
+                        <label asp-for="ProfileCode"></label>
+                        <input asp-for="ProfileCode" 
+                               class="form-control" 
+                               placeholder="Ví dụ: HS-2024-001"
+                               readonly="@Model.IsEditMode" />
+                        <span asp-validation-for="ProfileCode" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="ProfileName"></label>
+                        <input asp-for="ProfileName" 
+                               class="form-control" 
+                               placeholder="Nhập tên hồ sơ" />
+                        <span asp-validation-for="ProfileName" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Description"></label>
+                        <textarea asp-for="Description" 
+                                  class="form-control" 
+                                  rows="3"
+                                  placeholder="Nhập mô tả cho hồ sơ"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    @if (!Model.IsEditMode)
+                    {
+                        <div class="form-group">
+                            <label asp-for="EnterpriseCode"></label>
+                            <select asp-for="EnterpriseCode" 
+                                    class="form-control select2"
+                                    asp-items="Model.Enterprises">
+                                <option value="">-- Chọn doanh nghiệp --</option>
+                            </select>
+                            <span asp-validation-for="EnterpriseCode" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="ParentProfileId"></label>
+                            <select asp-for="ParentProfileId" 
+                                    class="form-control select2"
+                                    asp-items="Model.ParentProfiles">
+                            </select>
+                            <span asp-validation-for="ParentProfileId" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                Để trống nếu đây là hồ sơ gốc (không có hồ sơ cha)
+                            </small>
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label asp-for="ProfileType"></label>
+                        <select asp-for="ProfileType" 
+                                class="form-control"
+                                asp-items="Model.ProfileTypes">
+                            <option value="">-- Chọn loại hồ sơ --</option>
+                        </select>
+                        <span asp-validation-for="ProfileType" class="text-danger"></span>
+                    </div>
+
+                    @if (!Model.IsEditMode)
+                    {
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" 
+                                       class="custom-control-input" 
+                                       asp-for="IsTemplate" 
+                                       id="isTemplate">
+                                <label class="custom-control-label" for="isTemplate">
+                                    @Html.DisplayNameFor(m => m.IsTemplate)
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                Đánh dấu nếu hồ sơ này là mẫu để tạo các hồ sơ khác
+                            </small>
+                        </div>
+                    }
+                </div>
+
+                <div class="card-footer">
+                    <div class="row">
+                        <div class="col-6">
+                            <a asp-action="Index" class="btn btn-default">
+                                <i class="fas fa-times"></i> Hủy
+                            </a>
+                        </div>
+                        <div class="col-6 text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                @(Model.IsEditMode ? "Cập nhật" : "Tạo mới")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <!-- Select2 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@@ttskch/select2-bootstrap4-theme@1.5.2/dist/select2-bootstrap4.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                width: '100%'
+            });
+        });
+    </script>
+}
