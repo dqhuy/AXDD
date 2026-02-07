@@ -1,0 +1,173 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.ProfileMetadataFieldFormViewModel
+@{
+    ViewData["Title"] = Model.IsEditMode ? "Chỉnh sửa Trường Metadata" : "Thêm Trường Metadata";
+    var profile = ViewBag.Profile as AXDD.WebApp.Admin.Models.ApiModels.DocumentProfileDto;
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+    <li class="breadcrumb-item"><a asp-action="Index">Hồ sơ Tài liệu</a></li>
+    @if (profile != null)
+    {
+        <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@profile.Id">@profile.ProfileName</a></li>
+        <li class="breadcrumb-item"><a asp-action="MetadataFields" asp-route-profileId="@profile.Id">Metadata</a></li>
+    }
+    <li class="breadcrumb-item active">@(Model.IsEditMode ? "Sửa" : "Thêm")</li>
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas @(Model.IsEditMode ? "fa-edit" : "fa-plus") mr-2"></i>
+                    @(Model.IsEditMode ? "Chỉnh sửa Trường Metadata" : "Thêm Trường Metadata")
+                </h3>
+            </div>
+
+            <form asp-action="@(Model.IsEditMode ? "EditField" : "CreateField")" method="post">
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="ProfileId" />
+
+                    @if (profile != null)
+                    {
+                        <div class="alert alert-info">
+                            <strong>Hồ sơ:</strong> @profile.ProfileName (@profile.ProfileCode)
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label asp-for="FieldName"></label>
+                        <input asp-for="FieldName" 
+                               class="form-control" 
+                               placeholder="Ví dụ: contract_date"
+                               readonly="@Model.IsEditMode" />
+                        <span asp-validation-for="FieldName" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            Tên trường dùng trong code, không có dấu, viết thường, phân cách bằng gạch dưới
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="FieldLabel"></label>
+                        <input asp-for="FieldLabel" 
+                               class="form-control" 
+                               placeholder="Ví dụ: Ngày ký hợp đồng" />
+                        <span asp-validation-for="FieldLabel" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            Nhãn hiển thị trên giao diện người dùng
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="FieldType"></label>
+                        <select asp-for="FieldType" 
+                                class="form-control"
+                                asp-items="Model.FieldTypes"
+                                onchange="handleFieldTypeChange()">
+                            <option value="">-- Chọn loại trường --</option>
+                        </select>
+                        <span asp-validation-for="FieldType" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" 
+                                   class="custom-control-input" 
+                                   asp-for="IsRequired" 
+                                   id="isRequired">
+                            <label class="custom-control-label" for="isRequired">
+                                @Html.DisplayNameFor(m => m.IsRequired)
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Nếu được chọn, trường này sẽ bắt buộc phải nhập khi thêm tài liệu
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="DisplayOrder"></label>
+                        <input type="number" 
+                               asp-for="DisplayOrder" 
+                               class="form-control" 
+                               min="1" />
+                        <span asp-validation-for="DisplayOrder" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            Thứ tự hiển thị của trường (số càng nhỏ hiển thị càng trước)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="DefaultValue"></label>
+                        <input asp-for="DefaultValue" 
+                               class="form-control" 
+                               placeholder="Giá trị mặc định (tùy chọn)" />
+                        <span asp-validation-for="DefaultValue" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group" id="optionsGroup" style="display: none;">
+                        <label asp-for="Options"></label>
+                        <textarea asp-for="Options" 
+                                  class="form-control" 
+                                  rows="4"
+                                  placeholder='Ví dụ JSON: ["Option 1", "Option 2", "Option 3"]'></textarea>
+                        <span asp-validation-for="Options" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            Dùng cho loại trường "Select". Nhập dạng JSON array
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="ValidationRules"></label>
+                        <textarea asp-for="ValidationRules" 
+                                  class="form-control" 
+                                  rows="2"
+                                  placeholder='Ví dụ JSON: {"min": 0, "max": 100}'></textarea>
+                        <span asp-validation-for="ValidationRules" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            Quy tắc xác thực dạng JSON (tùy chọn)
+                        </small>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <div class="row">
+                        <div class="col-6">
+                            <a asp-action="MetadataFields" asp-route-profileId="@Model.ProfileId" class="btn btn-default">
+                                <i class="fas fa-times"></i> Hủy
+                            </a>
+                        </div>
+                        <div class="col-6 text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 
+                                @(Model.IsEditMode ? "Cập nhật" : "Thêm mới")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            handleFieldTypeChange();
+        });
+
+        function handleFieldTypeChange() {
+            var fieldType = $('#FieldType').val();
+            if (fieldType === 'Select') {
+                $('#optionsGroup').show();
+            } else {
+                $('#optionsGroup').hide();
+            }
+        }
+    </script>
+}

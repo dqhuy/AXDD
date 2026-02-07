@@ -1,0 +1,89 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.DocumentProfileItemViewModel
+
+<div class="card profile-card h-100">
+    <div class="card-body">
+        <div class="text-center mb-3">
+            <i class="@Model.Icon fa-4x @Model.ColorClass"></i>
+        </div>
+        
+        <h5 class="card-title text-center mb-2">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="text-dark">
+                @Model.ProfileName
+            </a>
+        </h5>
+        
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <p class="card-text text-muted small text-center mb-2" style="height: 40px; overflow: hidden;">
+                @Model.Description
+            </p>
+        }
+        
+        <div class="text-center mb-2">
+            <span class="badge @Model.BadgeClass">@Model.Status</span>
+            @if (Model.IsTemplate)
+            {
+                <span class="badge badge-info"><i class="fas fa-star"></i> Mẫu</span>
+            }
+        </div>
+        
+        <div class="text-center text-muted small mb-3">
+            <div class="row">
+                <div class="col-6">
+                    <i class="fas fa-file"></i> @Model.DocumentCount tài liệu
+                </div>
+                @if (Model.ChildProfileCount > 0)
+                {
+                    <div class="col-6">
+                        <i class="fas fa-folder"></i> @Model.ChildProfileCount thư mục
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <div class="btn-group btn-group-sm w-100" role="group">
+            @if (Model.ChildProfileCount > 0)
+            {
+                <a asp-action="Index" 
+                   asp-route-parentProfileId="@Model.Id" 
+                   class="btn btn-outline-primary"
+                   title="Mở thư mục">
+                    <i class="fas fa-folder-open"></i>
+                </a>
+            }
+            <a asp-action="Details" 
+               asp-route-id="@Model.Id" 
+               class="btn btn-outline-info"
+               title="Chi tiết">
+                <i class="fas fa-eye"></i>
+            </a>
+            <a asp-action="Edit" 
+               asp-route-id="@Model.Id" 
+               class="btn btn-outline-warning"
+               title="Sửa">
+                <i class="fas fa-edit"></i>
+            </a>
+            <button type="button" 
+                    class="btn btn-outline-danger" 
+                    onclick="confirmDelete('@Model.Id', '@Model.ProfileName')"
+                    title="Xóa">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-footer text-muted small">
+        <i class="far fa-clock"></i> @Model.CreatedAt.ToString("dd/MM/yyyy")
+    </div>
+</div>
+
+<style>
+    .profile-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+    
+    .profile-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+</style>
