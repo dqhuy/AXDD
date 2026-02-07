@@ -1,0 +1,63 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+    Layout = "_LoginLayout";
+}
+
+<div class="login-box">
+    <div class="card card-outline card-primary">
+        <div class="card-header text-center">
+            <a href="#" class="h1"><b>AXDD</b> Admin</a>
+        </div>
+        <div class="card-body">
+            <p class="login-box-msg">Sign in to start your session</p>
+
+            <form asp-controller="Account" asp-action="Login" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                <div class="input-group mb-3">
+                    <input asp-for="Username" class="form-control" placeholder="Username" />
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-user"></span>
+                        </div>
+                    </div>
+                </div>
+                <span asp-validation-for="Username" class="text-danger"></span>
+
+                <div class="input-group mb-3">
+                    <input asp-for="Password" class="form-control" placeholder="Password" type="password" />
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-lock"></span>
+                        </div>
+                    </div>
+                </div>
+                <span asp-validation-for="Password" class="text-danger"></span>
+
+                <div class="row">
+                    <div class="col-7">
+                        <div class="icheck-primary">
+                            <input type="checkbox" asp-for="RememberMe" id="remember">
+                            <label for="remember">
+                                Remember Me
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-5">
+                        <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                    </div>
+                </div>
+            </form>
+
+            <p class="mb-1 mt-3">
+                <a href="#">I forgot my password</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

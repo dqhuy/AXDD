@@ -1,0 +1,363 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.DocumentUploadViewModel
+@{
+    ViewData["Title"] = "Upload Document";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+    <li class="breadcrumb-item"><a asp-controller="Document" asp-action="Index">Documents</a></li>
+    <li class="breadcrumb-item active">Upload</li>
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-upload mr-2"></i>
+                    Upload New Document
+                </h3>
+            </div>
+            
+            <form asp-action="Upload" method="post" enctype="multipart/form-data" id="uploadForm">
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <div class="row">
+                        <!-- Left Column -->
+                        <div class="col-md-6">
+                            <!-- File Upload Area -->
+                            <div class="form-group">
+                                <label for="file" class="control-label">Document File <span class="text-danger">*</span></label>
+                                <div class="custom-file-upload" id="dropZone">
+                                    <div class="upload-placeholder" id="uploadPlaceholder">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                        <p class="mb-2"><strong>Drag & drop files here</strong></p>
+                                        <p class="text-muted mb-3">or</p>
+                                        <label for="file" class="btn btn-primary btn-sm mb-0">
+                                            <i class="fas fa-folder-open"></i> Browse Files
+                                        </label>
+                                        <input type="file" 
+                                               asp-for="File" 
+                                               id="file" 
+                                               class="d-none" 
+                                               accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.zip,.rar" />
+                                        <p class="text-muted small mt-3 mb-0">
+                                            Maximum file size: 10 MB<br/>
+                                            Supported formats: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT, JPG, PNG, ZIP, RAR
+                                        </p>
+                                    </div>
+                                    <div class="upload-preview d-none" id="uploadPreview">
+                                        <div class="file-info">
+                                            <div class="file-icon" id="fileIcon">
+                                                <i class="fas fa-file fa-3x"></i>
+                                            </div>
+                                            <div class="file-details">
+                                                <h5 class="mb-1" id="fileName">No file selected</h5>
+                                                <p class="text-muted mb-2" id="fileSize">0 KB</p>
+                                                <div class="progress mb-2 d-none" id="uploadProgress">
+                                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                                         role="progressbar" 
+                                                         style="width: 0%" 
+                                                         id="progressBar">0%</div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-danger" id="removeFile" title="Remove file">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span asp-validation-for="File" class="text-danger"></span>
+                            </div>
+
+                            <!-- Enterprise Dropdown -->
+                            <div class="form-group">
+                                <label asp-for="EnterpriseId" class="control-label">Enterprise <span class="text-danger">*</span></label>
+                                <select asp-for="EnterpriseId" class="form-control" id="enterpriseSelect">
+                                    <option value="">-- Select Enterprise --</option>
+                                    @if (Model.Enterprises != null)
+                                    {
+                                        @foreach (var enterprise in Model.Enterprises)
+                                        {
+                                            <option value="@enterprise.Value">@enterprise.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="EnterpriseId" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="col-md-6">
+                            <!-- Document Type Dropdown -->
+                            <div class="form-group">
+                                <label asp-for="DocumentType" class="control-label">Document Type <span class="text-danger">*</span></label>
+                                <select asp-for="DocumentType" class="form-control" id="documentTypeSelect">
+                                    <option value="">-- Select Document Type --</option>
+                                    @if (Model.DocumentTypes != null)
+                                    {
+                                        @foreach (var docType in Model.DocumentTypes)
+                                        {
+                                            <option value="@docType.Value">@docType.Text</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="DocumentType" class="text-danger"></span>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="form-group">
+                                <label asp-for="Description" class="control-label">Description</label>
+                                <textarea asp-for="Description" 
+                                          class="form-control" 
+                                          rows="5" 
+                                          placeholder="Enter document description (optional)"
+                                          maxlength="500"></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    <span id="charCount">0</span> / 500 characters
+                                </small>
+                            </div>
+
+                            <!-- Upload Guidelines -->
+                            <div class="alert alert-info">
+                                <h6><i class="icon fas fa-info-circle"></i> Upload Guidelines</h6>
+                                <ul class="mb-0 pl-3">
+                                    <li>Ensure the file is relevant to the selected enterprise</li>
+                                    <li>Choose the appropriate document type for better organization</li>
+                                    <li>Add a clear description to help identify the document later</li>
+                                    <li>File names should be descriptive and professional</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-upload"></i> Upload Document
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <style>
+        .custom-file-upload {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background-color: #f9f9f9;
+            transition: all 0.3s ease;
+            min-height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .custom-file-upload.drag-over {
+            border-color: #007bff;
+            background-color: #e7f3ff;
+        }
+        
+        .upload-placeholder {
+            width: 100%;
+        }
+        
+        .upload-preview {
+            width: 100%;
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .file-icon {
+            flex-shrink: 0;
+        }
+        
+        .file-details {
+            flex-grow: 1;
+            text-align: left;
+        }
+        
+        .file-details h5 {
+            word-break: break-all;
+            margin-bottom: 5px;
+        }
+        
+        #removeFile {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+    
+    <script>
+        $(document).ready(function() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('file');
+            const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+            const uploadPreview = document.getElementById('uploadPreview');
+            const removeFileBtn = document.getElementById('removeFile');
+            const descriptionTextarea = document.getElementById('Description');
+            const charCount = document.getElementById('charCount');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            const maxFileSize = 10 * 1024 * 1024; // 10 MB in bytes
+            
+            // Character counter for description
+            if (descriptionTextarea && charCount) {
+                descriptionTextarea.addEventListener('input', function() {
+                    charCount.textContent = this.value.length;
+                });
+            }
+            
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Highlight drop zone when dragging over
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight(e) {
+                dropZone.classList.add('drag-over');
+            }
+            
+            function unhighlight(e) {
+                dropZone.classList.remove('drag-over');
+            }
+            
+            // Handle dropped files
+            dropZone.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleFiles(files);
+                }
+            }
+            
+            // Handle file input change
+            fileInput.addEventListener('change', function(e) {
+                if (this.files.length > 0) {
+                    handleFiles(this.files);
+                }
+            });
+            
+            // Handle files
+            function handleFiles(files) {
+                const file = files[0];
+                
+                // Validate file size
+                if (file.size > maxFileSize) {
+                    alert('File size exceeds the maximum limit of 10 MB. Please select a smaller file.');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                // Display file preview
+                displayFilePreview(file);
+            }
+            
+            // Display file preview
+            function displayFilePreview(file) {
+                uploadPlaceholder.classList.add('d-none');
+                uploadPreview.classList.remove('d-none');
+                
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                
+                const icon = getFileIcon(file.name);
+                document.getElementById('fileIcon').innerHTML = `<i class="${icon} fa-3x"></i>`;
+            }
+            
+            // Remove file
+            removeFileBtn.addEventListener('click', function() {
+                fileInput.value = '';
+                uploadPreview.classList.add('d-none');
+                uploadPlaceholder.classList.remove('d-none');
+            });
+            
+            // Format file size
+            function formatFileSize(bytes) {
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                if (bytes === 0) return '0 B';
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+            }
+            
+            // Get file icon based on extension
+            function getFileIcon(fileName) {
+                const extension = fileName.split('.').pop().toLowerCase();
+                const iconMap = {
+                    'pdf': 'fas fa-file-pdf text-danger',
+                    'doc': 'fas fa-file-word text-primary',
+                    'docx': 'fas fa-file-word text-primary',
+                    'xls': 'fas fa-file-excel text-success',
+                    'xlsx': 'fas fa-file-excel text-success',
+                    'ppt': 'fas fa-file-powerpoint text-warning',
+                    'pptx': 'fas fa-file-powerpoint text-warning',
+                    'jpg': 'fas fa-file-image text-info',
+                    'jpeg': 'fas fa-file-image text-info',
+                    'png': 'fas fa-file-image text-info',
+                    'gif': 'fas fa-file-image text-info',
+                    'zip': 'fas fa-file-archive text-secondary',
+                    'rar': 'fas fa-file-archive text-secondary',
+                    'txt': 'fas fa-file-alt text-muted'
+                };
+                return iconMap[extension] || 'fas fa-file text-muted';
+            }
+            
+            // Form validation before submit
+            $('#uploadForm').on('submit', function(e) {
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    e.preventDefault();
+                    alert('Please select a file to upload.');
+                    return false;
+                }
+                
+                if (fileInput.files[0].size > maxFileSize) {
+                    e.preventDefault();
+                    alert('File size exceeds the maximum limit of 10 MB.');
+                    return false;
+                }
+                
+                // Disable submit button to prevent double submission
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+            });
+        });
+    </script>
+}

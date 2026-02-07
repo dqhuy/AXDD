@@ -1,0 +1,267 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.EnterpriseListViewModel
+@{
+    ViewData["Title"] = "Enterprises";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+    <li class="breadcrumb-item active">Enterprises</li>
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-building mr-2"></i>
+                    Enterprise List
+                </h3>
+                <div class="card-tools">
+                    <a asp-action="Create" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Create New Enterprise
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Search and Filter Form -->
+            <div class="card-body">
+                <form asp-action="Index" method="get" class="form-horizontal">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="searchTerm">Search</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="searchTerm" 
+                                       name="searchTerm" 
+                                       placeholder="Search by name or tax code..." 
+                                       value="@Model.SearchTerm" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="statusFilter">Status</label>
+                                <select class="form-control" id="statusFilter" name="statusFilter">
+                                    <option value="">All Statuses</option>
+                                    <option value="Active" selected="@(Model.StatusFilter == "Active")">Active</option>
+                                    <option value="Inactive" selected="@(Model.StatusFilter == "Inactive")">Inactive</option>
+                                    <option value="Suspended" selected="@(Model.StatusFilter == "Suspended")">Suspended</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="typeFilter">Type</label>
+                                <select class="form-control" id="typeFilter" name="typeFilter">
+                                    <option value="">All Types</option>
+                                    <option value="Manufacturing" selected="@(Model.TypeFilter == "Manufacturing")">Manufacturing</option>
+                                    <option value="Service" selected="@(Model.TypeFilter == "Service")">Service</option>
+                                    <option value="Trading" selected="@(Model.TypeFilter == "Trading")">Trading</option>
+                                    <option value="Other" selected="@(Model.TypeFilter == "Other")">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-info btn-block">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Results count -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <p class="text-muted">
+                            Showing @Model.Enterprises.Count of @Model.TotalCount enterprises
+                        </p>
+                    </div>
+                </div>
+
+                <!-- DataTable -->
+                <div class="table-responsive">
+                    <table id="enterprisesTable" class="table table-bordered table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Tax Code</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Industrial Zone</th>
+                                <th>Created Date</th>
+                                <th style="width: 150px">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var enterprise in Model.Enterprises)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@enterprise.Id" class="font-weight-bold">
+                                            @enterprise.Name
+                                        </a>
+                                    </td>
+                                    <td>@enterprise.TaxCode</td>
+                                    <td>
+                                        <span class="badge badge-info">@enterprise.EnterpriseType</span>
+                                    </td>
+                                    <td>
+                                        @{
+                                            var statusClass = enterprise.Status switch
+                                            {
+                                                "Active" => "badge-success",
+                                                "Inactive" => "badge-secondary",
+                                                "Suspended" => "badge-danger",
+                                                _ => "badge-secondary"
+                                            };
+                                        }
+                                        <span class="badge @statusClass">@enterprise.Status</span>
+                                    </td>
+                                    <td>@(enterprise.IndustrialZone ?? "N/A")</td>
+                                    <td>@enterprise.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@enterprise.Id" 
+                                               class="btn btn-info" 
+                                               title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@enterprise.Id" 
+                                               class="btn btn-primary" 
+                                               title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" 
+                                                    class="btn btn-danger" 
+                                                    onclick="confirmDelete('@enterprise.Id', '@enterprise.Name')"
+                                                    title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination justify-content-center">
+                                    @if (Model.PageNumber > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" 
+                                               asp-action="Index" 
+                                               asp-route-pageNumber="@(Model.PageNumber - 1)"
+                                               asp-route-searchTerm="@Model.SearchTerm"
+                                               asp-route-statusFilter="@Model.StatusFilter"
+                                               asp-route-typeFilter="@Model.TypeFilter">
+                                                Previous
+                                            </a>
+                                        </li>
+                                    }
+
+                                    @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                                    {
+                                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                            <a class="page-link" 
+                                               asp-action="Index" 
+                                               asp-route-pageNumber="@i"
+                                               asp-route-searchTerm="@Model.SearchTerm"
+                                               asp-route-statusFilter="@Model.StatusFilter"
+                                               asp-route-typeFilter="@Model.TypeFilter">
+                                                @i
+                                            </a>
+                                        </li>
+                                    }
+
+                                    @if (Model.PageNumber < Model.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" 
+                                               asp-action="Index" 
+                                               asp-route-pageNumber="@(Model.PageNumber + 1)"
+                                               asp-route-searchTerm="@Model.SearchTerm"
+                                               asp-route-statusFilter="@Model.StatusFilter"
+                                               asp-route-typeFilter="@Model.TypeFilter">
+                                                Next
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Confirm Delete
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the enterprise <strong id="enterpriseName"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#enterprisesTable').DataTable({
+                "paging": false,
+                "lengthChange": false,
+                "searching": false,
+                "ordering": true,
+                "info": false,
+                "autoWidth": false,
+                "responsive": true,
+                "order": [[5, "desc"]] // Sort by Created Date descending
+            });
+        });
+
+        function confirmDelete(id, name) {
+            $('#enterpriseName').text(name);
+            $('#deleteForm').attr('action', '/Enterprise/Delete/' + id);
+            $('#deleteModal').modal('show');
+        }
+    </script>
+}
