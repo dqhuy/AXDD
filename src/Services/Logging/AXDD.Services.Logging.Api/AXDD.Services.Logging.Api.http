@@ -1,0 +1,272 @@
+### AXDD Logging Service API Tests
+### Base URL
+@baseUrl = https://localhost:5001
+@api = {{baseUrl}}/api/v1/logs
+
+### Test Variables
+@userId = 11111111-1111-1111-1111-111111111111
+@correlationId = test-correlation-{{$guid}}
+
+###############################################
+### AUDIT LOGS
+###############################################
+
+### Get all audit logs (with pagination)
+GET {{api}}/audit?pageNumber=1&pageSize=10
+
+### Get audit logs with filters
+GET {{api}}/audit?serviceName=Enterprise.Api&level=Error&pageNumber=1&pageSize=20
+
+### Get audit log by ID
+GET {{api}}/audit/{{$guid}}
+
+### Create audit log
+POST {{api}}/audit
+Content-Type: application/json
+
+{
+  "level": "Info",
+  "userId": "{{userId}}",
+  "username": "admin@axdd.com",
+  "userRole": "Administrator",
+  "serviceName": "TestService",
+  "actionName": "TestAction",
+  "entityType": "TestEntity",
+  "httpMethod": "POST",
+  "requestPath": "/api/v1/test",
+  "ipAddress": "192.168.1.100",
+  "statusCode": 201,
+  "durationMs": 150,
+  "message": "Test log entry created",
+  "correlationId": "{{correlationId}}"
+}
+
+### Get logs by user
+GET {{api}}/audit/user/{{userId}}?pageNumber=1&pageSize=10
+
+### Get logs by service
+GET {{api}}/audit/service/Enterprise.Api?pageNumber=1&pageSize=10
+
+### Trace logs by correlation ID
+GET {{api}}/audit/trace/{{correlationId}}
+
+### Cleanup old logs (older than 90 days)
+DELETE {{api}}/audit/cleanup?olderThanDays=90
+
+###############################################
+### USER ACTIVITIES
+###############################################
+
+### Get all user activities
+GET {{api}}/activities?pageNumber=1&pageSize=10
+
+### Get user activities by user ID
+GET {{api}}/activities/user/{{userId}}?pageNumber=1&pageSize=10
+
+### Get recent activities
+GET {{api}}/activities/recent?count=20
+
+### Get activities by resource
+GET {{api}}/activities/resource/Enterprise/{{$guid}}?pageNumber=1&pageSize=10
+
+### Log user activity
+POST {{api}}/activities
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "username": "admin@axdd.com",
+  "activityType": "Create",
+  "activityDescription": "Created test resource via API testing",
+  "ipAddress": "192.168.1.100",
+  "deviceInfo": "Chrome 120 on Windows 10",
+  "resourceType": "TestResource",
+  "resourceId": "{{$guid}}"
+}
+
+### Log user login activity
+POST {{api}}/activities
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "username": "admin@axdd.com",
+  "activityType": "Login",
+  "activityDescription": "User logged in to the system",
+  "ipAddress": "192.168.1.100",
+  "deviceInfo": "Chrome 120 on Windows 10"
+}
+
+###############################################
+### ERROR LOGS
+###############################################
+
+### Get all errors
+GET {{api}}/errors?pageNumber=1&pageSize=10
+
+### Get errors with filters
+GET {{api}}/errors?severity=Critical&isResolved=false&pageNumber=1&pageSize=10
+
+### Get error by ID
+GET {{api}}/errors/{{$guid}}
+
+### Log error
+POST {{api}}/errors
+Content-Type: application/json
+
+{
+  "serviceName": "TestService",
+  "errorMessage": "Test error occurred during API testing",
+  "stackTrace": "at TestService.Controllers.TestController.TestAction()\nat Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeActionMethodAsync()",
+  "severity": "High",
+  "requestPath": "/api/v1/test",
+  "exceptionType": "TestException",
+  "correlationId": "{{correlationId}}"
+}
+
+### Get unresolved errors
+GET {{api}}/errors/unresolved?pageNumber=1&pageSize=10
+
+### Resolve error
+PUT {{api}}/errors/{{$guid}}/resolve
+Content-Type: application/json
+
+{
+  "resolution": "Issue was fixed by restarting the service and clearing cache",
+  "resolvedBy": "{{userId}}"
+}
+
+### Get errors by service
+GET {{api}}/errors/service/Enterprise.Api?pageNumber=1&pageSize=10
+
+### Get critical errors
+GET {{api}}/errors/critical?pageNumber=1&pageSize=10
+
+###############################################
+### PERFORMANCE LOGS
+###############################################
+
+### Get all performance logs
+GET {{api}}/performance?pageNumber=1&pageSize=10
+
+### Get performance logs with filters
+GET {{api}}/performance?serviceName=Enterprise.Api&pageNumber=1&pageSize=20
+
+### Log performance metrics
+POST {{api}}/performance
+Content-Type: application/json
+
+{
+  "serviceName": "TestService",
+  "endpointName": "/api/v1/test",
+  "durationMs": 350,
+  "memoryUsedMB": 145.8,
+  "cpuUsagePercent": 42.5,
+  "requestCount": 1,
+  "successCount": 1,
+  "errorCount": 0,
+  "httpMethod": "GET",
+  "statusCode": 200
+}
+
+### Get service statistics
+GET {{api}}/performance/statistics?serviceName=Enterprise.Api
+
+### Get service statistics with date range
+GET {{api}}/performance/statistics?serviceName=Enterprise.Api&startDate=2024-01-01&endDate=2024-01-31
+
+### Get slow requests (threshold: 1000ms)
+GET {{api}}/performance/slow?thresholdMs=1000&pageNumber=1&pageSize=10
+
+### Get slow requests (threshold: 500ms)
+GET {{api}}/performance/slow?thresholdMs=500&pageNumber=1&pageSize=10
+
+###############################################
+### DASHBOARD
+###############################################
+
+### Get dashboard summary
+GET {{api}}/dashboard/summary
+
+###############################################
+### HEALTH CHECK
+###############################################
+
+### Check service health
+GET {{baseUrl}}/health
+
+###############################################
+### ADVANCED SCENARIOS
+###############################################
+
+### Scenario 1: Full request lifecycle logging
+# 1. Create audit log
+POST {{api}}/audit
+Content-Type: application/json
+
+{
+  "level": "Info",
+  "userId": "{{userId}}",
+  "username": "admin@axdd.com",
+  "serviceName": "TestService",
+  "actionName": "ProcessOrder",
+  "message": "Order processing started",
+  "correlationId": "order-{{$guid}}"
+}
+
+# 2. Log user activity
+POST {{api}}/activities
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "username": "admin@axdd.com",
+  "activityType": "Create",
+  "activityDescription": "Processed new order",
+  "resourceType": "Order",
+  "resourceId": "{{$guid}}"
+}
+
+# 3. Log performance
+POST {{api}}/performance
+Content-Type: application/json
+
+{
+  "serviceName": "TestService",
+  "endpointName": "/api/v1/orders",
+  "durationMs": 456,
+  "requestCount": 1,
+  "successCount": 1,
+  "errorCount": 0,
+  "httpMethod": "POST",
+  "statusCode": 201
+}
+
+### Scenario 2: Error handling flow
+# 1. Log error
+POST {{api}}/errors
+Content-Type: application/json
+
+{
+  "serviceName": "TestService",
+  "errorMessage": "Payment gateway timeout",
+  "severity": "High",
+  "requestPath": "/api/v1/payments",
+  "exceptionType": "TimeoutException"
+}
+
+# 2. Get unresolved errors
+GET {{api}}/errors/unresolved
+
+# 3. Resolve error (use actual error ID from step 1)
+# PUT {{api}}/errors/{errorId}/resolve
+
+### Scenario 3: Search and filter
+# Find all errors from a specific service in the last 24 hours
+GET {{api}}/errors?serviceName=Enterprise.Api&dateFrom={{$datetime}}
+
+# Find user activities of type 'Delete'
+GET {{api}}/activities?activityType=Delete
+
+# Find slow requests above 2 seconds
+GET {{api}}/performance/slow?thresholdMs=2000
