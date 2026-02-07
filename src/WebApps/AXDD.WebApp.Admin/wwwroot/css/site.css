@@ -1,0 +1,195 @@
+/* Custom styles for AXDD Admin */
+
+/* Login page customization */
+.login-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-box {
+    width: 400px;
+}
+
+.login-box .card {
+    border-radius: 10px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Notification badge pulse animation */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.navbar-badge.pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Card hover effect */
+.card-hover:hover {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-5px);
+    transition: all 0.3s ease;
+}
+
+/* Status badges */
+.badge-active {
+    background-color: #28a745;
+}
+
+.badge-inactive {
+    background-color: #6c757d;
+}
+
+.badge-pending {
+    background-color: #ffc107;
+}
+
+.badge-approved {
+    background-color: #28a745;
+}
+
+.badge-rejected {
+    background-color: #dc3545;
+}
+
+/* DataTables customization */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.25rem 0.5rem;
+    margin: 0 2px;
+}
+
+/* File upload zone */
+.upload-zone {
+    border: 2px dashed #007bff;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.upload-zone:hover {
+    background-color: #e9ecef;
+    border-color: #0056b3;
+}
+
+.upload-zone.dragover {
+    background-color: #cfe2ff;
+    border-color: #0d6efd;
+}
+
+.file-preview {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+/* Timeline notification styles */
+.timeline-item.unread {
+    background-color: #f0f8ff;
+    border-left: 3px solid #007bff;
+}
+
+.timeline-item {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.timeline-item:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Toast notification */
+.toast {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+}
+
+/* Loading spinner overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .login-box {
+        width: 90%;
+        margin: 20px auto;
+    }
+
+    .small-box {
+        margin-bottom: 15px;
+    }
+}
+
+/* Custom scrollbar */
+.sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #2c3b41;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #4b6d7a;
+    border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #5a8091;
+}
+
+/* Print styles */
+@media print {
+    .main-sidebar,
+    .main-header,
+    .main-footer,
+    .btn,
+    .pagination {
+        display: none !important;
+    }
+
+    .content-wrapper {
+        margin: 0 !important;
+    }
+}

@@ -1,0 +1,237 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.ReportDetailsViewModel
+@{
+    ViewData["Title"] = "Report Details";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+    <li class="breadcrumb-item"><a asp-controller="Report" asp-action="Index">Reports</a></li>
+    <li class="breadcrumb-item active">Details</li>
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <!-- Report Info Card -->
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    @Model.ReportType Report - @Model.EnterpriseName
+                </h3>
+                <div class="card-tools">
+                    @{
+                        var statusClass = Model.Status switch
+                        {
+                            "Pending" => "badge-warning",
+                            "Approved" => "badge-success",
+                            "Rejected" => "badge-danger",
+                            _ => "badge-secondary"
+                        };
+                        var statusIcon = Model.Status switch
+                        {
+                            "Pending" => "fas fa-clock",
+                            "Approved" => "fas fa-check",
+                            "Rejected" => "fas fa-times",
+                            _ => "fas fa-question"
+                        };
+                    }
+                    <span class="badge @statusClass">
+                        <i class="@statusIcon"></i> @Model.Status
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Enterprise:</dt>
+                            <dd class="col-sm-8">
+                                <a asp-controller="Enterprise" asp-action="Details" asp-route-id="@Model.EnterpriseId" class="font-weight-bold">
+                                    @Model.EnterpriseName
+                                </a>
+                            </dd>
+
+                            <dt class="col-sm-4">Report Type:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge badge-info">@Model.ReportType</span>
+                            </dd>
+
+                            <dt class="col-sm-4">Period:</dt>
+                            <dd class="col-sm-8">
+                                @{
+                                    var periodDisplay = Model.Quarter.HasValue ? $"Q{Model.Quarter}/{Model.Year}" :
+                                                       Model.Month.HasValue ? $"{Model.Month:D2}/{Model.Year}" :
+                                                       $"{Model.Year}";
+                                }
+                                <i class="fas fa-calendar-alt"></i>
+                                @periodDisplay
+                            </dd>
+
+                            <dt class="col-sm-4">Submitted Date:</dt>
+                            <dd class="col-sm-8">
+                                <i class="fas fa-calendar-check"></i>
+                                @Model.SubmittedAt.ToString("MMM dd, yyyy HH:mm")
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-4">Status:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge @statusClass">
+                                    <i class="@statusIcon"></i> @Model.Status
+                                </span>
+                            </dd>
+
+                            @if (Model.ReviewedAt.HasValue)
+                            {
+                                <dt class="col-sm-4">Reviewed Date:</dt>
+                                <dd class="col-sm-8">
+                                    <i class="fas fa-calendar"></i>
+                                    @Model.ReviewedAt.Value.ToString("MMM dd, yyyy HH:mm")
+                                </dd>
+
+                                @if (!string.IsNullOrEmpty(Model.ReviewComments))
+                                {
+                                    <dt class="col-sm-4">Review Comments:</dt>
+                                    <dd class="col-sm-8">
+                                        <div class="alert alert-info mb-0">
+                                            @Model.ReviewComments
+                                        </div>
+                                    </dd>
+                                }
+                            }
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Data Card -->
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-database mr-2"></i>
+                    Report Data
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(Model.Data))
+                {
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="reportDataTable">
+                            <tbody>
+                                <!-- Report data will be rendered here based on JSON -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Raw JSON view (collapsed by default) -->
+                    <div class="mt-3">
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#rawJsonData" aria-expanded="false">
+                            <i class="fas fa-code"></i> View Raw JSON
+                        </button>
+                        <div class="collapse mt-2" id="rawJsonData">
+                            <pre class="bg-light p-3 border rounded" style="max-height: 400px; overflow-y: auto;"><code>@Model.Data</code></pre>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No report data available</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        @if (Model.Status == "Pending")
+                        {
+                            <a asp-action="Approve" asp-route-id="@Model.Id" class="btn btn-success">
+                                <i class="fas fa-check-circle"></i> Approve Report
+                            </a>
+                            <a asp-action="Approve" asp-route-id="@Model.Id" class="btn btn-danger">
+                                <i class="fas fa-times-circle"></i> Reject Report
+                            </a>
+                        }
+                        else if (Model.Status == "Approved")
+                        {
+                            <button type="button" class="btn btn-success" disabled>
+                                <i class="fas fa-check-circle"></i> Already Approved
+                            </button>
+                        }
+                        else if (Model.Status == "Rejected")
+                        {
+                            <button type="button" class="btn btn-danger" disabled>
+                                <i class="fas fa-times-circle"></i> Already Rejected
+                            </button>
+                        }
+
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-list"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Parse and display report data
+            try {
+                var reportData = @Html.Raw(string.IsNullOrEmpty(Model.Data) ? "{}" : Model.Data);
+                var tableBody = $('#reportDataTable tbody');
+                
+                if (Object.keys(reportData).length === 0) {
+                    tableBody.html('<tr><td class="text-center text-muted">No data available</td></tr>');
+                } else {
+                    // Render report data as key-value pairs
+                    $.each(reportData, function(key, value) {
+                        var displayValue = value;
+                        
+                        // Format value based on type
+                        if (typeof value === 'object' && value !== null) {
+                            displayValue = '<pre class="mb-0">' + JSON.stringify(value, null, 2) + '</pre>';
+                        } else if (typeof value === 'boolean') {
+                            displayValue = value ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-secondary">No</span>';
+                        } else if (value === null || value === undefined) {
+                            displayValue = '<span class="text-muted">N/A</span>';
+                        }
+                        
+                        // Convert camelCase/PascalCase to readable format
+                        var displayKey = key.replace(/([A-Z])/g, ' $1').trim();
+                        displayKey = displayKey.charAt(0).toUpperCase() + displayKey.slice(1);
+                        
+                        tableBody.append(
+                            '<tr>' +
+                                '<th style="width: 30%">' + displayKey + '</th>' +
+                                '<td>' + displayValue + '</td>' +
+                            '</tr>'
+                        );
+                    });
+                }
+            } catch (e) {
+                console.error('Error parsing report data:', e);
+                $('#reportDataTable tbody').html(
+                    '<tr><td class="text-center text-danger">' +
+                        '<i class="fas fa-exclamation-triangle"></i> Error parsing report data' +
+                    '</td></tr>'
+                );
+            }
+        });
+    </script>
+}

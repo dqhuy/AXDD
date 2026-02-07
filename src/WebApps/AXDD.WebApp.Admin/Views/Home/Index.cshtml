@@ -1,0 +1,197 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item active">Dashboard</li>
+}
+
+<!-- Info boxes -->
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+            <div class="inner">
+                <h3>@Model.TotalEnterprises</h3>
+                <p>Total Enterprises</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <a asp-controller="Enterprise" asp-action="Index" class="small-box-footer">
+                More info <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>@Model.ActiveEnterprises</h3>
+                <p>Active Enterprises</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <a asp-controller="Enterprise" asp-action="Index" asp-route-statusFilter="Active" class="small-box-footer">
+                More info <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3>@Model.PendingReports</h3>
+                <p>Pending Reports</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <a asp-controller="Report" asp-action="Index" asp-route-statusFilter="Pending" class="small-box-footer">
+                More info <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>@Model.TotalDocuments</h3>
+                <p>Total Documents</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-folder"></i>
+            </div>
+            <a asp-controller="Document" asp-action="Index" class="small-box-footer">
+                More info <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-pie mr-1"></i>
+                    Enterprises by Type
+                </h3>
+            </div>
+            <div class="card-body">
+                <canvas id="enterpriseTypeChart" style="height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar mr-1"></i>
+                    Reports by Status
+                </h3>
+            </div>
+            <div class="card-body">
+                <canvas id="reportStatusChart" style="height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-history mr-1"></i>
+                    Recent Activity
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th style="width: 10px">#</th>
+                            <th>Activity</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.RecentActivities.Count; i++)
+                        {
+                            var activity = Model.RecentActivities[i];
+                            <tr>
+                                <td>@(i + 1)</td>
+                                <td>
+                                    <i class="@activity.Icon mr-2"></i>
+                                    @activity.Description
+                                </td>
+                                <td>
+                                    <span class="badge badge-info">
+                                        @activity.Timestamp.ToString("MMM dd, HH:mm")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Enterprise Type Chart
+        const enterpriseTypeCtx = document.getElementById('enterpriseTypeChart').getContext('2d');
+        const enterpriseTypeChart = new Chart(enterpriseTypeCtx, {
+            type: 'pie',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.EnterprisesByType.Select(e => e.Type))),
+                datasets: [{
+                    data: @Html.Raw(Json.Serialize(Model.EnterprisesByType.Select(e => e.Count))),
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Report Status Chart
+        const reportStatusCtx = document.getElementById('reportStatusChart').getContext('2d');
+        const reportStatusChart = new Chart(reportStatusCtx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.ReportsByStatus.Select(r => r.Status))),
+                datasets: [{
+                    label: 'Reports',
+                    data: @Html.Raw(Json.Serialize(Model.ReportsByStatus.Select(r => r.Count))),
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+}

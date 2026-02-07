@@ -1,0 +1,113 @@
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+    <!-- Brand Logo -->
+    <a asp-controller="Home" asp-action="Index" class="brand-link">
+        <img src="https://via.placeholder.com/33" alt="AXDD Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text font-weight-light">AXDD Admin</span>
+    </a>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <!-- Sidebar user panel -->
+        <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+            <div class="image">
+                <img src="https://via.placeholder.com/160" class="img-circle elevation-2" alt="User Image">
+            </div>
+            <div class="info">
+                <a href="#" class="d-block">@User.FindFirst("FullName")?.Value</a>
+            </div>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <nav class="mt-2">
+            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a asp-controller="Home" asp-action="Index" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                        <p>Dashboard</p>
+                    </a>
+                </li>
+
+                <!-- Enterprise Management -->
+                <li class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Enterprise" ? "menu-open" : "")">
+                    <a href="#" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Enterprise" ? "active" : "")">
+                        <i class="nav-icon fas fa-building"></i>
+                        <p>
+                            Enterprises
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Enterprise" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>All Enterprises</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Enterprise" asp-action="Create" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Add New</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Document Management -->
+                <li class="nav-item @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" ? "menu-open" : "")">
+                    <a href="#" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" ? "active" : "")">
+                        <i class="nav-icon fas fa-file-alt"></i>
+                        <p>
+                            Documents
+                            <i class="right fas fa-angle-left"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a asp-controller="Document" asp-action="Index" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>All Documents</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Document" asp-action="Upload" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>Upload Document</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Report Management -->
+                <li class="nav-item">
+                    <a asp-controller="Report" asp-action="Index" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" ? "active" : "")">
+                        <i class="nav-icon fas fa-chart-bar"></i>
+                        <p>Reports</p>
+                    </a>
+                </li>
+
+                <!-- Notifications -->
+                <li class="nav-item">
+                    <a asp-controller="Notification" asp-action="Index" class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notification" ? "active" : "")">
+                        <i class="nav-icon fas fa-bell"></i>
+                        <p>
+                            Notifications
+                            <span class="badge badge-warning right" id="sidebar-notification-badge">0</span>
+                        </p>
+                    </a>
+                </li>
+
+                <!-- Divider -->
+                <li class="nav-header">SYSTEM</li>
+
+                <!-- Settings -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-cog"></i>
+                        <p>Settings</p>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</aside>

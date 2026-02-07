@@ -1,0 +1,214 @@
+@model AXDD.WebApp.Admin.Models.ViewModels.ReportApprovalViewModel
+@{
+    ViewData["Title"] = "Review Report";
+}
+
+@section Breadcrumb {
+    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+    <li class="breadcrumb-item"><a asp-controller="Report" asp-action="Index">Reports</a></li>
+    <li class="breadcrumb-item"><a asp-controller="Report" asp-action="Details" asp-route-id="@Model.ReportId">Details</a></li>
+    <li class="breadcrumb-item active">Review</li>
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <!-- Report Summary Card -->
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Review Report
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Please review the report carefully before approving or rejecting. Your decision and comments will be recorded.
+                </div>
+            </div>
+        </div>
+
+        <!-- Review Form Card -->
+        <div class="card card-warning">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-clipboard-check mr-2"></i>
+                    Review Decision
+                </h3>
+            </div>
+            <form asp-action="Approve" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReportId" />
+
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <!-- Approve Checkbox -->
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" 
+                                   asp-for="Approve" 
+                                   class="custom-control-input"
+                                   id="approveCheck" />
+                            <label class="custom-control-label" for="approveCheck">
+                                <strong>Approve this report</strong>
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Check this box to approve the report. Leave unchecked to reject.
+                        </small>
+                        <span asp-validation-for="Approve" class="text-danger"></span>
+                    </div>
+
+                    <!-- Comments Textarea -->
+                    <div class="form-group">
+                        <label asp-for="Comments" class="required">
+                            Review Comments <span class="text-danger">*</span>
+                        </label>
+                        <textarea asp-for="Comments" 
+                                  class="form-control" 
+                                  rows="6" 
+                                  placeholder="Enter your review comments here. Please be specific about any issues found or reasons for your decision..."
+                                  required></textarea>
+                        <span asp-validation-for="Comments" class="text-danger"></span>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            Provide detailed feedback to help the enterprise understand your decision.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> Submit Review
+                    </button>
+                    <a asp-action="Details" asp-route-id="@Model.ReportId" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-arrow-left"></i> Back to Details
+                    </a>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-list"></i> Back to List
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card card-info collapsed-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-question-circle mr-2"></i>
+                    Review Guidelines
+                </h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <h5>When to Approve:</h5>
+                <ul>
+                    <li>All required data fields are complete and accurate</li>
+                    <li>Report format follows the established guidelines</li>
+                    <li>Supporting documents (if required) are attached</li>
+                    <li>No discrepancies or inconsistencies in the data</li>
+                    <li>Report is submitted within the deadline</li>
+                </ul>
+
+                <h5 class="mt-3">When to Reject:</h5>
+                <ul>
+                    <li>Missing required data or information</li>
+                    <li>Data inconsistencies or errors</li>
+                    <li>Missing or invalid supporting documents</li>
+                    <li>Report does not follow the required format</li>
+                    <li>Data appears to be inaccurate or suspicious</li>
+                </ul>
+
+                <h5 class="mt-3">Best Practices:</h5>
+                <ul>
+                    <li>Review all sections of the report thoroughly</li>
+                    <li>Cross-check data with previous reports when applicable</li>
+                    <li>Provide constructive and actionable feedback</li>
+                    <li>Be specific about what needs to be corrected</li>
+                    <li>Maintain professional and objective tone in comments</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Update button based on approve checkbox
+            function updateApprovalButton() {
+                var isApproved = $('#approveCheck').is(':checked');
+                
+                if (isApproved) {
+                    $('#submitBtn').removeClass('btn-danger').addClass('btn-success');
+                    $('#submitBtn').html('<i class="fas fa-check-circle"></i> Submit Approval');
+                } else {
+                    $('#submitBtn').removeClass('btn-success').addClass('btn-danger');
+                    $('#submitBtn').html('<i class="fas fa-times-circle"></i> Submit Rejection');
+                }
+            }
+
+            // Initial check
+            updateApprovalButton();
+
+            // Listen for changes
+            $('#approveCheck').on('change', function() {
+                updateApprovalButton();
+            });
+
+            // Form validation
+            $('form').on('submit', function(e) {
+                var isApproved = $('#approveCheck').is(':checked');
+                var comments = $('#Comments').val().trim();
+
+                if (!comments) {
+                    e.preventDefault();
+                    alert('Please provide review comments');
+                    $('#Comments').focus();
+                    return false;
+                }
+
+                if (comments.length < 10) {
+                    e.preventDefault();
+                    alert('Please provide more detailed comments (at least 10 characters)');
+                    $('#Comments').focus();
+                    return false;
+                }
+
+                // Confirmation dialog
+                var confirmMessage = isApproved
+                    ? 'Are you sure you want to APPROVE this report?'
+                    : 'Are you sure you want to REJECT this report? The enterprise will need to make corrections and resubmit.';
+
+                if (!confirm(confirmMessage)) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Show loading state
+                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+                
+                return true;
+            });
+
+            // Character counter for comments
+            $('#Comments').on('input', function() {
+                var length = $(this).val().length;
+                var color = length < 10 ? 'text-danger' : 'text-success';
+                
+                if ($('#charCount').length === 0) {
+                    $(this).after('<small id="charCount" class="form-text ' + color + '">Characters: ' + length + '</small>');
+                } else {
+                    $('#charCount').removeClass('text-danger text-warning text-success').addClass(color).text('Characters: ' + length);
+                }
+            });
+        });
+    </script>
+}
