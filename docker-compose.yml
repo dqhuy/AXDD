@@ -18,11 +18,11 @@ services:
     networks:
       - axdd-network
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "YourStrong@Passw0rd" -Q "SELECT 1" || exit 1
-      interval: 10s
-      timeout: 3s
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'YourStrong@Passw0rd' -Q 'SELECT 1' -C || exit 1"]
+      interval: 15s
+      timeout: 5s
       retries: 10
-      start_period: 10s
+      start_period: 60s
 
   # PostgreSQL + PostGIS - GIS Database
   postgres-gis:
@@ -457,11 +457,25 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ApiGateway__Url=http://api-gateway:8080
+      - ApiGateway__BaseUrl=http://api-gateway:8080
+      - ApiServices__AuthService=http://auth-api:8080
+      - ApiServices__EnterpriseService=http://enterprise-api:8080
+      - ApiServices__MasterDataService=http://masterdata-api:8080
+      - ApiServices__InvestmentService=http://investment-api:8080
+      - ApiServices__FileManagerService=http://filemanager-api:8080
+      - ApiServices__ReportService=http://report-api:8080
+      - ApiServices__NotificationService=http://notification-api:8080
+      - ApiServices__LoggingService=http://logging-api:8080
+      - ApiServices__SearchService=http://search-api:8080
+      - ApiServices__GisService=http://gis-api:8080
+      - SignalR__NotificationHubUrl=http://notification-api:8080/hubs/notifications
       - Authentication__Authority=http://auth-api:8080
     depends_on:
       - api-gateway
       - auth-api
+      - masterdata-api
+      - enterprise-api
+      - notification-api
     networks:
       - axdd-network
 
