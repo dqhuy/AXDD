@@ -43,6 +43,61 @@ public class Folder : BaseEntity
     public string? Description { get; set; }
 
     /// <summary>
+    /// Gets or sets the folder type ID
+    /// </summary>
+    public Guid? FolderTypeId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the folder type
+    /// </summary>
+    public FolderType? FolderType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the digital storage ID
+    /// </summary>
+    public Guid? DigitalStorageId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the digital storage
+    /// </summary>
+    public DigitalStorage? DigitalStorage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the security level ID
+    /// </summary>
+    public Guid? SecurityLevelId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the security level
+    /// </summary>
+    public SecurityLevel? SecurityLevel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the password hash for protected folders
+    /// </summary>
+    public string? PasswordHash { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the folder is password protected
+    /// </summary>
+    public bool IsPasswordProtected { get; set; }
+
+    /// <summary>
+    /// Gets or sets the QR code data
+    /// </summary>
+    public string? QRCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the expiry date for time-limited folders
+    /// </summary>
+    public DateTime? ExpiryDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the reminder date for notifications
+    /// </summary>
+    public DateTime? ReminderDate { get; set; }
+
+    /// <summary>
     /// Gets or sets the collection of child folders
     /// </summary>
     public ICollection<Folder> ChildFolders { get; set; } = new List<Folder>();
@@ -51,4 +106,9 @@ public class Folder : BaseEntity
     /// Gets or sets the collection of files in this folder
     /// </summary>
     public ICollection<FileMetadata> Files { get; set; } = new List<FileMetadata>();
+
+    /// <summary>
+    /// Gets or sets the collection of folder permissions
+    /// </summary>
+    public ICollection<FolderPermission> Permissions { get; set; } = new List<FolderPermission>();
 }

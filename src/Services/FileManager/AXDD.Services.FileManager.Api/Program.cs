@@ -57,6 +57,18 @@ builder.Services.AddScoped<IDocumentProfileService, DocumentProfileService>();
 builder.Services.AddScoped<IProfileMetadataFieldService, ProfileMetadataFieldService>();
 builder.Services.AddScoped<IDocumentProfileDocumentService, DocumentProfileDocumentService>();
 
+// Register Document Management Module services (Doceye)
+builder.Services.AddScoped<IDocumentTypeService, DocumentTypeService>();
+builder.Services.AddScoped<ISecurityLevelService, SecurityLevelService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<IDocumentLoanService, DocumentLoanService>();
+builder.Services.AddScoped<IFolderTypeService, FolderTypeService>();
+builder.Services.AddScoped<IDigitalStorageService, DigitalStorageService>();
+builder.Services.AddScoped<IPhysicalStorageService, PhysicalStorageService>();
+builder.Services.AddScoped<IDocumentApprovalService, DocumentApprovalService>();
+builder.Services.AddScoped<IFolderPermissionService, FolderPermissionService>();
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+
 // Add Controllers
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

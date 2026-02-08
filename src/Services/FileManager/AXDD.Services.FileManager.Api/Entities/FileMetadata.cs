@@ -93,6 +93,71 @@ public class FileMetadata : BaseEntity
     public string? Tags { get; set; }
 
     /// <summary>
+    /// Gets or sets the document type ID
+    /// </summary>
+    public Guid? DocumentTypeId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the document type
+    /// </summary>
+    public DocumentType? DocumentType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the security level ID
+    /// </summary>
+    public Guid? SecurityLevelId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the security level
+    /// </summary>
+    public SecurityLevel? SecurityLevel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the password hash for protected files
+    /// </summary>
+    public string? PasswordHash { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the file is password protected
+    /// </summary>
+    public bool IsPasswordProtected { get; set; }
+
+    /// <summary>
+    /// Gets or sets the QR code data
+    /// </summary>
+    public string? QRCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets the OCR extracted content
+    /// </summary>
+    public string? OcrContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether OCR has been processed
+    /// </summary>
+    public bool IsOcrProcessed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the document date (date on the document itself)
+    /// </summary>
+    public DateTime? DocumentDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the document number
+    /// </summary>
+    public string? DocumentNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets the physical storage location ID
+    /// </summary>
+    public Guid? PhysicalStorageLocationId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the physical storage location
+    /// </summary>
+    public PhysicalStorageLocation? PhysicalStorageLocation { get; set; }
+
+    /// <summary>
     /// Gets or sets the collection of file versions
     /// </summary>
     public ICollection<FileVersion> Versions { get; set; } = new List<FileVersion>();
@@ -101,4 +166,9 @@ public class FileMetadata : BaseEntity
     /// Gets or sets the collection of file shares
     /// </summary>
     public ICollection<FileShare> Shares { get; set; } = new List<FileShare>();
+
+    /// <summary>
+    /// Gets or sets the collection of document approvals
+    /// </summary>
+    public ICollection<DocumentApproval> Approvals { get; set; } = new List<DocumentApproval>();
 }
