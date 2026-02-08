@@ -27,6 +27,20 @@ docker-start.bat up
 docker compose up -d
 ```
 
+### Kiểm tra cấu hình
+
+Sau khi khởi động, chạy script validation để kiểm tra:
+
+**Linux/Mac:**
+```bash
+./docker-validate.sh
+```
+
+**Windows:**
+```cmd
+docker-validate.bat
+```
+
 ### Truy cập ứng dụng
 - 🌐 **Cổng thông tin Admin**: http://localhost:8080
 - 🌐 **Cổng thông tin Doanh nghiệp**: http://localhost:4200
@@ -37,7 +51,8 @@ docker compose up -d
 ### Tài liệu Docker
 - 📖 [Hướng dẫn triển khai Docker](DOCKER_DEPLOYMENT.md)
 - 🔧 [Hướng dẫn xử lý sự cố](DOCKER_TROUBLESHOOTING.md)
-- ✅ [Báo cáo hoàn thành Docker](DOCKER_IMPLEMENTATION_COMPLETE.md)
+- ✅ [Báo cáo sửa lỗi cấu hình](DOCKER_CONFIGURATION_FIXES.md)
+- 📋 [Báo cáo hoàn thành Docker](DOCKER_IMPLEMENTATION_COMPLETE.md)
 
 ## Cấu trúc Solution
 
