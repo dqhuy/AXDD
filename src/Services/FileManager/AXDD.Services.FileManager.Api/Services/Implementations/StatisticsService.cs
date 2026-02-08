@@ -27,7 +27,6 @@ public class StatisticsService : IStatisticsService
         try
         {
             var documentQuery = _context.FileMetadata.Where(f => !f.IsDeleted);
-            var approvalQuery = _context.DocumentApprovals.Where(a => !a.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(enterpriseCode))
             {
@@ -48,13 +47,32 @@ public class StatisticsService : IStatisticsService
                 .Select(g => new { TypeName = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.TypeName, x => x.Count, cancellationToken);
 
-            // Approved/Rejected counts
-            var approvedDocuments = await approvalQuery
-                .CountAsync(a => a.Status == ApprovalStatus.Approved, cancellationToken);
-            var rejectedDocuments = await approvalQuery
-                .CountAsync(a => a.Status == ApprovalStatus.Rejected, cancellationToken);
-            var pendingCataloging = await approvalQuery
-                .CountAsync(a => a.Status == ApprovalStatus.Pending, cancellationToken);
+            // Get document IDs that have approved approvals
+            var approvedDocumentIds = await _context.DocumentApprovals
+                .Where(a => !a.IsDeleted && a.Status == ApprovalStatus.Approved)
+                .Select(a => a.DocumentId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            // Get document IDs that have pending approvals (not yet cataloged)
+            var pendingDocumentIds = await _context.DocumentApprovals
+                .Where(a => !a.IsDeleted && a.Status == ApprovalStatus.Pending)
+                .Select(a => a.DocumentId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            var approvedDocuments = approvedDocumentIds.Count;
+            var pendingCataloging = pendingDocumentIds.Count;
+            
+            // Rejected documents count
+            var rejectedDocuments = await _context.DocumentApprovals
+                .Where(a => !a.IsDeleted && a.Status == ApprovalStatus.Rejected)
+                .Select(a => a.DocumentId)
+                .Distinct()
+                .CountAsync(cancellationToken);
+
+            // Cataloged documents are those with approved status
+            var catalogedDocuments = approvedDocuments;
 
             // Storage statistics
             var totalStorageBytes = await _context.DigitalStorages
@@ -70,7 +88,7 @@ public class StatisticsService : IStatisticsService
                 TotalDocuments = totalDocuments,
                 DigitizedDocuments = digitizedDocuments,
                 PendingCataloging = pendingCataloging,
-                CatalogedDocuments = totalDocuments - pendingCataloging,
+                CatalogedDocuments = catalogedDocuments,
                 ApprovedDocuments = approvedDocuments,
                 RejectedDocuments = rejectedDocuments,
                 DocumentsByType = documentsByType,
@@ -154,19 +172,44 @@ public class StatisticsService : IStatisticsService
                 query = query.Where(l => l.EnterpriseCode == enterpriseCode);
             }
 
-            var loans = await query.ToListAsync(cancellationToken);
+            var now = DateTime.UtcNow;
+
+            // Count by status in database queries for better performance
+            var totalLoans = await query.CountAsync(cancellationToken);
+            var pendingLoans = await query.CountAsync(l => l.Status == LoanStatus.Pending, cancellationToken);
+            var approvedLoans = await query.CountAsync(l => l.Status == LoanStatus.Approved, cancellationToken);
+            var rejectedLoans = await query.CountAsync(l => l.Status == LoanStatus.Rejected, cancellationToken);
+            var borrowedLoans = await query.CountAsync(l => l.Status == LoanStatus.Borrowed, cancellationToken);
+            var returnedLoans = await query.CountAsync(l => l.Status == LoanStatus.Returned, cancellationToken);
+            
+            // Count overdue: either already marked as Overdue, or Borrowed and past due date
+            var overdueLoans = await query.CountAsync(l => 
+                l.Status == LoanStatus.Overdue || 
+                (l.Status == LoanStatus.Borrowed && l.DueDate < now), cancellationToken);
+
+            // Loans by type - use aggregation in database
+            var loansByType = await query
+                .GroupBy(l => l.LoanType)
+                .Select(g => new { Type = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Type, x => x.Count, cancellationToken);
+
+            // Distinct borrowers count
+            var totalBorrowers = await query
+                .Select(l => l.BorrowerUserId)
+                .Distinct()
+                .CountAsync(cancellationToken);
 
             var stats = new LoanStatisticsDto
             {
-                TotalLoans = loans.Count,
-                PendingLoans = loans.Count(l => l.Status == LoanStatus.Pending),
-                ApprovedLoans = loans.Count(l => l.Status == LoanStatus.Approved),
-                RejectedLoans = loans.Count(l => l.Status == LoanStatus.Rejected),
-                BorrowedLoans = loans.Count(l => l.Status == LoanStatus.Borrowed),
-                ReturnedLoans = loans.Count(l => l.Status == LoanStatus.Returned),
-                OverdueLoans = loans.Count(l => l.Status == LoanStatus.Overdue || (l.Status == LoanStatus.Borrowed && l.DueDate < DateTime.UtcNow)),
-                LoansByType = loans.GroupBy(l => l.LoanType).ToDictionary(g => g.Key, g => g.Count()),
-                TotalBorrowers = loans.Select(l => l.BorrowerUserId).Distinct().Count()
+                TotalLoans = totalLoans,
+                PendingLoans = pendingLoans,
+                ApprovedLoans = approvedLoans,
+                RejectedLoans = rejectedLoans,
+                BorrowedLoans = borrowedLoans,
+                ReturnedLoans = returnedLoans,
+                OverdueLoans = overdueLoans,
+                LoansByType = loansByType,
+                TotalBorrowers = totalBorrowers
             };
 
             return Result<LoanStatisticsDto>.Success(stats);
